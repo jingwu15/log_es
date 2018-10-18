@@ -1,0 +1,26 @@
+{
+    "name": "jingwu/log_es",
+    "description": "日志落地到ES",
+    "keywords": ["log", "eslasticsearch", "beanstalk", "flume"],
+    "homepage": "https://github.com/jingwu15/log_es.git",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "jingwu",
+            "email": "jingwu@vip.163.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Jingwu\\LogEs\\": "src/log_es/"
+        }
+    },
+    "require": {
+        "php": ">=5.4.0",
+        "elasticsearch/elasticsearch": "~5.0",
+        "monolog/monolog": "1.22.0",
+        "jingwu/phpbeanstalk": "0.1.5"
+    },
+    "require-dev": {
+    }
+}
