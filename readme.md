@@ -1,6 +1,6 @@
 ### 日志基础服务
 
-### 介绍
+### 1. 介绍
 ```
 日志基础服务分为4个部分：
 
@@ -19,7 +19,22 @@
 ```
 
 
-#### 配置
+#### 2. 配置
+
+##### 2.1 版本及依赖
+-----------------------
+0.1.1, PHP >=5.4.0 (in progress)
+
+##### 2.2 使用composer
+-----
+添加依赖 ``jingwu/log_es`` 到项目的 ``composer.json`` 文件:
+```json
+    {
+        "require": {
+            "jingwu/log_es": "0.1.2"
+        }
+    }
+```
 
 ```
 require "vendor/autoload.php";
@@ -31,7 +46,7 @@ use Jingwu\LogEs\LogClient;
 use Jingwu\LogEs\EsClient;
 ```
 
-##### 配置Beanstalk
+##### 2.3 配置Beanstalk
 ```
 $configBeanstalk = [
     "host" => "127.0.0.1",
@@ -40,7 +55,7 @@ $configBeanstalk = [
 Cfg::instance()->setBeanstalk($configBeanstalk["host"], $configBeanstalk["port"]);
 ```
 
-##### 配置Flume
+##### 2.4 配置Flume
 ```
 //Flume支持多个配置，在使用时会隋机选择
 $configFlume = [
@@ -50,7 +65,7 @@ $configFlume = [
 Cfg::instance()->setFlume($configFlume);
 ```
 
-##### 配置Es
+##### 2.5 配置Es
 ```
 //ES支持多个配置，在使用时会隋机选择
 $configEs = [
@@ -60,23 +75,19 @@ $configEs = [
 Cfg::instance()->setEs($configEs);
 ```
 
-##### 配置logs
+##### 2.6 配置logs
 ```
 //logs 是每种日志的字段配置
 $configLogs = [
-    'log_only_for_test' => [
-        "type" => "business",
-        "fields" => 'key, name, title, create_at',
-    ],
-    'log_only_loginfo' => [
-        "type" => "default",
-        "fields" => 'datetime, channel, level, level_name, context, message, formatted, extra',
-    ],
+    'log_only_for_test' => 'key, name, title, create_at',
+    'log_only_loginfo' => 'datetime, channel, level, level_name, context, message, formatted, extra',
 ];
 Cfg::instance()->setLogs($configLogs);
 ```
 
-#### 业务型日志生成
+#### 3. 使用
+
+#### 3.1 业务型日志生成
 ```
 $logkey = 'log_only_for_test';
 $data = [
@@ -88,7 +99,7 @@ $data = [
 LogClient::instance($logkey)->add($data);
 ```
 
-#### debug/info/warn/error日志生成
+#### 3.2 debug/info/warn/error日志生成
 ```
 $logkey = 'log_only_info';
 
@@ -98,7 +109,7 @@ LogClient::instance($logkey)->warn("this is warn");
 LogClient::instance($logkey)->error("this is error");
 ```
 
-#### debug/info/warn/error日志 添加文件输出
+#### 3.3 debug/info/warn/error日志 添加文件输出
 ```
 $logkey = 'log_only_info';
 $logfile = '/tmp/log_test_loges.log';
@@ -126,7 +137,7 @@ LogClient::instance($logkey)->warn("this is warn");
 LogClient::instance($logkey)->error("this is error");
 ```
 
-#### 日志ES查询
+#### 3.4 日志ES查询
 ```
 $logkey = 'log_only_for_test';
 
@@ -154,7 +165,7 @@ $result = EsClient::instance($logkey)->count($where);
 var_dump($result); exit();
 ```
 
-#### 日志落地到ES
+#### 3.5 日志落地到ES
 ```
 //beanstalk 中会有不同业务类型的队列，为了避免产生冲突，所有的日志队列统一设置前缀 log_
 //如果不设置 prefix ，默认为 log_
