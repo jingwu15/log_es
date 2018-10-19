@@ -78,64 +78,79 @@ Cfg::instance()->setLogs($configLogs);
 
 #### 业务型日志生成
 ```
+$logkey = 'log_only_for_test';
 $data = [
     "key"       => "key_{$i}",
     "name"      => "name_{$i}",
     "title"     => "title_{$i}",
     "create_at" => date("Y-m-d H:i:s"),
 ];
-LogClient::instance('log_only_for_test')->add($data);
+LogClient::instance($logkey)->add($data);
 ```
 
 #### debug/info/warn/error日志生成
 ```
-LogClient::instance('log_only_info')->debug("this is debug");
-LogClient::instance('log_only_info')->info("this is info");
-LogClient::instance('log_only_info')->warn("this is warn");
-LogClient::instance('log_only_info')->error("this is error");
+$logkey = 'log_only_info';
+
+LogClient::instance($logkey)->debug("this is debug");
+LogClient::instance($logkey)->info("this is info");
+LogClient::instance($logkey)->warn("this is warn");
+LogClient::instance($logkey)->error("this is error");
 ```
 
 #### debug/info/warn/error日志 添加文件输出
 ```
+$logkey = 'log_only_info';
+$logfile = '/tmp/log_test_loges.log';
+
 //创建新的logger
-$logger = new \Monolog\Logger;
-$streamHandler = new \Monolog\Handler\StreamHandler('/tmp/log_test_loges.log', \Monolog\Logger::DEBUG);
-$streamHandler->setFormatter(new LineFormatter("[%datetime%] %channel%.%level_name%: %message% %context% %extra% \n", '', true));
+$logger = new \Monolog\Logger($logkey);
+
+//日志写入到文件
+$streamHandler = new \Monolog\Handler\StreamHandler($logfile, \Monolog\Logger::DEBUG);
+$streamHandler->setFormatter(new \Monolog\Formatter\LineFormatter("[%datetime%] %channel%.%level_name%: %message% %context% %extra% \n", '', true));
 $logger->pushHandler($streamHandler);
 
+//使用 php 配置，受 php 的 display_errors, error_reporting 及 error_log 影响
+$errorHandler = new Monolog\Handler\ErrorLogHandler(4, \Monolog\Logger::ERROR, true, true);
+$errorHandler->setFormatter(new \Monolog\Formatter\LineFormatter("[%datetime%] %channel%.%level_name%: %message% %context% %extra% \n", '', true));
+$logger->pushHandler($errorHandler);
+
 //添加到 LogClient 中
-LogClient::setLogger('log_only_info', $logger);
+LogClient::setLogger($logkey, $logger);
 
 //正常的使用 LogClient
-LogClient::instance('log_only_info')->debug("this is debug");
-LogClient::instance('log_only_info')->info("this is info");
-LogClient::instance('log_only_info')->warn("this is warn");
-LogClient::instance('log_only_info')->error("this is error");
+LogClient::instance($logkey)->debug("this is debug");
+LogClient::instance($logkey)->info("this is info");
+LogClient::instance($logkey)->warn("this is warn");
+LogClient::instance($logkey)->error("this is error");
 ```
 
 #### 日志ES查询
 ```
+$logkey = 'log_only_for_test';
+
 //getsAll  取得全部数据
 $sorts  = ["create_at" => "asc"];
 $where  = ['name' => 'name_17', "create_at" => ["gte" => "2018-09-21 16:49:06", "lte" => "2018-09-21 17:41:14"]];
-$result = EsClient::instance('only_for_test')->getsAll($where, $sorts);
+$result = EsClient::instance($logkey)->getsAll($where, $sorts);
 var_dump($result); exit();
 
 //getsPage  按页取得数据
 $sorts  = ["create_at" => "desc"];
 $where  = ['name' => 'name_17'];
 //$where  = ['name' => 'name_17', "create_at" => ["gte" => "2018-09-21 16:49:06", "lte" => "2018-09-21 17:41:14"]];
-$result = EsClient::instance('only_for_test')->getsPage($where, 1, 100, $sorts);
+$result = EsClient::instance($logkey)->getsPage($where, 1, 100, $sorts);
 var_dump($result); exit();
 
 //get   取得单条数据
 $where  = ['_id' => 'AWX7gJtQKEvuT5mLCgIQ'];
-$result = EsClient::instance('only_for_test')->get($where);
+$result = EsClient::instance($logkey)->get($where);
 var_dump($result); exit();
 
 //count   统计计录数
 $where  = ['name' => 'name_17'];
-$result = EsClient::instance('only_for_test')->count($where);
+$result = EsClient::instance($logkey)->count($where);
 var_dump($result); exit();
 ```
 

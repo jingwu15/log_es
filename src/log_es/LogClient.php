@@ -45,20 +45,20 @@ class LogClient extends Core {
         return $result;
     }
 
-    public function error($msg) {
-        self::logger($this->_logkey)->info($msg);
-    }
-
     public function debug($msg) {
-        self::logger($this->_logkey)->info($msg);
-    }
-
-    public function warn($msg) {
-        self::logger($this->_logkey)->info($msg);
+        self::logger($this->_logkey)->debug($msg);
     }
 
     public function info($msg) {
         self::logger($this->_logkey)->info($msg);
+    }
+
+    public function warn($msg) {
+        self::logger($this->_logkey)->warn($msg);
+    }
+
+    public function error($msg) {
+        self::logger($this->_logkey)->error($msg);
     }
 
     public function getFields() {
