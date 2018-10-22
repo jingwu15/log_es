@@ -33,25 +33,36 @@ class EsClient extends Core {
     }
 
     protected function _cmd($cmd, $params = null) {
+        $code = 0;
         $reasons = $result = [];
         try {
-            if($params === null) {
-                $result = self::conn()->$cmd();
-            } else {
-                $result = self::conn()->$cmd($params);
-            }
+            $client = self::conn();
+            $result = $params === null ? $client->$cmd() : $client->$cmd($params);
+            $code = 1;
         } catch(\Exception $e) {
-            $raw = $e->getMessage();
-            $jdata = json_decode($raw, 1);
-            $reasons = array_column($jdata['error']['root_cause'], 'reason');
+            $reasons = self::parseReason($e->getMessage()); 
         }
-        return ['error'=>$reasons, 'data'=>$result];
+        return ['code' => $code, 'error'=>$reasons, 'data'=>$result];
+    }
+
+    public function getMap() {
+        $code = 0;
+        $reasons = $result = $map = [];
+        $params = ['index' => $this->_doc];
+        try {
+            $result = self::conn()->indices()->getMapping($params);
+            $map = $result[$this->_doc]["mappings"];
+            $code = 1;
+        } catch(\Exception $e) {
+            $reasons = self::parseReason($e->getMessage()); 
+        }
+        return ['code' => $code, 'error' => $reasons, 'data' => $map];
     }
 
     public function get($where) {
-        $body = $this->_parseWhere($where);
-        $params = ['index' => $this->_doc, 'body'  => json_encode($body)];
-        $result = $this->_cmd('search', $params);
+        $body    = $this->_parseWhere($where);
+        $params  = ['index' => $this->_doc, 'body' => json_encode($body)];
+        $result  = $this->_cmd('search', $params);
         $resultF = $this->_formatResult($result);
         if($resultF['status']) $resultF['data'] = $resultF['data'][0];
         return $resultF;
@@ -154,9 +165,15 @@ class EsClient extends Core {
         return self::$conn;
     }
 
+    static public function parseReason($raw = "") {
+        $jdata = json_decode($raw, 1);
+        return array_column($jdata['error']['root_cause'], 'reason');
+    }
+
     public function __call($func, $params) {
         if(method_exists(self::conn(), $func)) {
             return $this->_cmd($func, $params[0]);
         }
     }
+
 }

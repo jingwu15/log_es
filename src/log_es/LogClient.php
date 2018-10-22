@@ -33,15 +33,9 @@ class LogClient extends Core {
     }
 
     public function add($row) {
-        $keys = array_keys($row);
-        $fields = self::parseField($this->_logkey);
-        if($keys == $fields) {
-            $result = LogQueue::instance('client')->usePut($this->_logkey, json_encode($row));
-        } else {
-            //字段不匹配，异常
-            //$result = LogQueue::instance('client')->usePut($this->_logkey, $row);
-            $result = false;
-        }
+        $result = LogQueue::instance('client')->usePut($this->_logkey, json_encode($row));
+        if(!$result) 
+            file_put_contents("/tmp/log_queue.log", date("Y-m-d H:i:s")."\t{$this->_logkey}\t".json_encode($row), FILE_APPEND);
         return $result;
     }
 

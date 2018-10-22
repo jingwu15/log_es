@@ -48,14 +48,24 @@ class Flume extends Core {
             print_r("flume----".$i++."\n");
 
             $rows = $log->listTubes();
-            if($rows === false) { $reconn = 1; continue; }
+            if($rows === false) { print_r("连接失败\n"); $reconn = 1; continue; }
             $tubes = array_filter($rows, function($v) use($prefix) {return strpos($v, $prefix) === 0 ? true : false;});
             if(!$tubes) { sleep(1); continue; }
 
             $total = 0;
             foreach($tubes as $tube) {
+                //print_r("\ntube-{$tube}: start\n");
                 if($reconn == 1) break;
                 if($total > $limitTotal) { break; }
+                $tubeMap = $tubeKeys = [];
+                if(!isset($tubeMap[$tube])) {
+                    $doc = $tube."_".date('Y_m');
+                    $result = EsClient::instance($doc)->getMap();
+                    //没有取到文档结构，有可能是其他业务的日志，不做处理
+                    if(!$result['code']) continue;
+                    $tubeMap = $result['data'][$tube]["properties"];
+                    $tubeKeys = array_keys($tubeMap);
+                }
 
                 $stats = $log->statsTube($tube);
                 if($stats === false) { $reconn = 1; break; }
@@ -68,10 +78,27 @@ class Flume extends Core {
                     if($tubeIgnore != $tube) $log->ignore($tubeIgnore);
                 }
                 $count = 0;
+                //print_r("tube-{$tube}-count: {$count}\n");
                 while($count < $stats['current-jobs-ready']) {
                     if($total > $limitTotal) { break; }
                     $job    = $log->reserve(1);
                     if($job === false) { $reconn = 1; break; }
+                    $jdata = json_decode($job["body"], 1);
+                    if(!$jdata) {
+                        //错误，非json格式
+                        file_put_contents("/tmp/log_queue_error.log", date('Y-m-d H:i:s')."\t{$tube}\t{$job['body']}\n", FILE_APPEND);
+                        $result = $log->delete($job['id']);
+                        continue;
+                    }
+                    $keys = array_keys($jdata);
+                    $diff = array_diff($keys, $tubeKeys);
+                    //print_r("tube-{$tube}-diff: ".json_encode($diff, JSON_UNESCAPED_UNICODE)."\n");
+                    if($diff) {
+                        //有新增字段
+                        file_put_contents("/tmp/log_queue.log", date('Y-m-d H:i:s')."\t{$tube}\t{$job['body']}\n", FILE_APPEND);
+                        $result = $log->delete($job['id']);
+                        continue;
+                    }
                     $logs[] = ["headers" => ["topic" => $tube], "body" => $job["body"]];
                     $result = $log->delete($job['id']);
                     if($result === false) { $reconn = 1; break; }

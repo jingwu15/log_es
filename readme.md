@@ -77,10 +77,10 @@ Cfg::instance()->setEs($configEs);
 
 ##### 2.6 配置logs
 ```
-//logs 是每种日志的字段配置
+//logs 可以使用的日志，如果不配置也可以使用，建议配置
 $configLogs = [
-    'log_only_for_test' => 'key, name, title, create_at',
-    'log_only_loginfo' => 'datetime, channel, level, level_name, context, message, formatted, extra',
+    'log_only_for_test'
+    'log_only_loginfo'
 ];
 Cfg::instance()->setLogs($configLogs);
 ```
@@ -141,34 +141,32 @@ LogClient::instance($logkey)->error("this is error");
 ```
 $logkey = 'log_only_for_test';
 
-//getsAll  取得全部数据
-$sorts  = ["create_at" => "asc"];
-$where  = ['name' => 'name_17', "create_at" => ["gte" => "2018-09-21 16:49:06", "lte" => "2018-09-21 17:41:14"]];
-$result = EsClient::instance($logkey)->getsAll($where, $sorts);
-var_dump($result); exit();
-
-//getsPage  按页取得数据
-$sorts  = ["create_at" => "desc"];
-$where  = ['name' => 'name_17'];
-//$where  = ['name' => 'name_17', "create_at" => ["gte" => "2018-09-21 16:49:06", "lte" => "2018-09-21 17:41:14"]];
-$result = EsClient::instance($logkey)->getsPage($where, 1, 100, $sorts);
-var_dump($result); exit();
-
-//get   取得单条数据
 $where  = ['_id' => 'AWX7gJtQKEvuT5mLCgIQ'];
 $result = EsClient::instance($logkey)->get($where);
-var_dump($result); exit();
+var_dump($result); 
 
-//count   统计计录数
+$sorts  = ["create_at" => "asc"];
+$where  = ['name' => 'name_17'];
+$result = EsClient::instance($logkey)->getsAll($where, $sorts);
+var_dump($result);
+
+$sorts  = ["create_at" => "desc"];
+$where  = ['name' => 'name_17', "create_at" => ["gte" => "2018-09-21 16:49:06", "lte" => "2018-09-21 17:41:14"]];
+$result = EsClient::instance($logkey)->getsPage($where, 1, 100, $sorts);
+var_dump($result);
+
 $where  = ['name' => 'name_17'];
 $result = EsClient::instance($logkey)->count($where);
-var_dump($result); exit();
+var_dump($result);
 ```
 
 #### 3.5 日志落地到ES
 ```
 //beanstalk 中会有不同业务类型的队列，为了避免产生冲突，所有的日志队列统一设置前缀 log_
 //如果不设置 prefix ，默认为 log_
+
+//日志落地时，如果队列在ES中没有对应的文档，则会跳过，并报警；
+//日志落地时，如果队列中的日志比ES中文档的结构有多出来的字段，需要更新ES萦引，会报警，日志会暂时写入文作；
 
 $prefix = "log_only_";
 Flume::instance()->listen($prefix);
