@@ -75,17 +75,18 @@ $configEs = [
 Cfg::instance()->setEs($configEs);
 ```
 
-##### 2.6 配置logs
+##### 2.6 配置 tmpdir/logpre
 ```
-//logs 可以使用的日志，如果不配置也可以使用，建议配置
-$configLogs = [
-    'log_only_for_test'
-    'log_only_loginfo'
-];
-Cfg::instance()->setLogs($configLogs);
+//tmpdir 是队列写入ES时，会生成临时文件，需要指定临时文件目录
+Cfg::instance()->setTmpdir('/tmp');
+
+//logpre 队列的默认前缀
+Cfg::instance()->setLogpre('log_');
 ```
 
 #### 3. 使用
+
+注意：日志生成时，没有对文档格式进行严格校验，在写入ES时会校验，格式不匹配的，会邮件告警
 
 #### 3.1 业务型日志生成
 ```
@@ -168,7 +169,12 @@ var_dump($result);
 //日志落地时，如果队列在ES中没有对应的文档，则会跳过，并报警；
 //日志落地时，如果队列中的日志比ES中文档的结构有多出来的字段，需要更新ES萦引，会报警，日志会暂时写入文作；
 
+//如果不指定前缀，则使用 log_
 $prefix = "log_only_";
 Flume::instance()->listen($prefix);
+
+//日志写入队列时，因业务方面要求不严，有增加字段，而未更新ES时，会导致写入失败
+//目前采用的机制时，先写入文件，等检测到ES更新时，再写入ES
+Flume::instance()->correct($prefix);
 ```
 

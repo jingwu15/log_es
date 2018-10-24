@@ -5,6 +5,23 @@ class Cfg extends Core {
 
     private $_cfg = null;
     static public $instances = [];
+
+    public function __construct() {
+        //初始化
+        $this->_cfg = [
+            'beanstalk' => [
+                'host'           => '',
+                'port'           => '',
+                'persistent'     => true,
+                'timeout'        => 600,
+                'socket_timeout' => 3600
+            ],
+            'flume' => [],
+            'es' => [],
+            'tmpdir' => '/tmp',
+            'logpre' => 'log_',
+        ];
+    }
     
     static public function instance($key = 'default') {
         if(!isset(self::$instances[$key])) {
@@ -24,19 +41,27 @@ class Cfg extends Core {
     }
 
     public function setFlume($apis) {
+        if(!$this->_formatStrArr($apis)) return false;
         $this->_cfg['flume'] = $apis;
     }
 
-    public function setEs($hosts) {
-        $this->_cfg['es'] = $hosts;
+    public function setEs($apis) {
+        if(!$this->_formatStrArr($apis)) return false;
+        $this->_cfg['es'] = $apis;
     }
 
-    public function setLog($key, $fields) {
-        $this->_cfg['logs'][$key] = $fields;
+    public function setMails($mails) {
+        if(!$this->_formatStrArr($mails)) return false;
+        $this->_cfg['mails'] = $mails;
     }
 
-    public function setLogs($docs) {
-        $this->_cfg['logs'] = $docs;
+    public function setTmpdir($tmpdir) {
+        $this->_cfg['tmpdir'] = $tmpdir;
+        $this->_cfg['tmpdir'] = $this->_formatPath($this->_cfg['tmpdir']);
+    }
+
+    public function setLogpre($logpre) {
+        $this->_cfg['logpre'] = $logpre ? $logpre : $this->_cfg['logpre'];
     }
 
     public function get($key) {
@@ -47,6 +72,27 @@ class Cfg extends Core {
             $tmp = $tmp[$field];
         }
         return $tmp;
+    }
+
+    private function _formatPath($path) {
+        return substr($path, -1) == '/' ? substr($path, 0, -1) : $path;
+    }
+
+    private function _formatStrArr($rows) {
+        if(!is_array($rows)) return false;
+        foreach($rows as $row) if(!is_string($row)) return false;
+        return $rows;
+    }
+
+    public function check() {
+        if(!$this->_cfg['beanstalk']) return ['code' => 0, "error" => "beanstalk noset"];
+        if(!$this->_cfg['flume']) return ['code' => 0, "error" => "flume noset"    ];
+        if(!$this->_cfg['es']) return ['code' => 0, "error" => "es noset"       ];
+        if(!$this->_cfg['mails']) return ['code' => 0, "error" => "mail noset"     ];
+
+        $cfgBs = $this->_cfg['beanstalk'];
+        if(!$cfgBs['host'] || !$cfgBs['port']) return ['code' => 0, "error" => "beanstalk set error"];
+        return ['code' => 1, "error" => "ok"];
     }
 
 }
