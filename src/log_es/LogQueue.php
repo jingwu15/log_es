@@ -13,18 +13,18 @@ use Jingwu\PhpBeanstalk\Client as BsClient;
 
 class LogQueue extends BsClient {
 
-    static protected $_instances = [];
+    static protected $instances = [];
 
     public function __construct($config = []) {
         parent::__construct($config);
     }
 
     static public function instance($key = 'default') {
-        if(!isset(self::$_instances[$key])) {
+        if(!isset(self::$instances[$key])) {
             $config = Cfg::instance()->get('beanstalk');
-            self::$_instances[$key] = new self($config);
+            self::$instances[$key] = new self($config);
         }
-        return self::$_instances[$key];
+        return self::$instances[$key];
     }
 
 }

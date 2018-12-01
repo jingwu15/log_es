@@ -17,19 +17,19 @@ use Elasticsearch\ClientBuilder;
 
 class EsClient extends Core {
 
-    static public $_instances = [];
-    static public $conn = null;
     protected $_doc = '';
+    static public $conn = null;
+    static public $instances = [];
 
     public function __construct($doc = '') {
         $this->_doc = $doc;
     }
 
     static public function instance($doc = 'default') {
-        if(!isset(self::$_instances[$doc])) {
-            self::$_instances[$doc] = new self($doc);
+        if(!isset(self::$instances[$doc])) {
+            self::$instances[$doc] = new self($doc);
         }
-        return self::$_instances[$doc];
+        return self::$instances[$doc];
     }
 
     protected function _cmd($cmd, $params = null) {

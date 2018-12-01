@@ -3,8 +3,8 @@ namespace Jingwu\LogEs;
 
 class Flume extends Core {
 
-    static $_instances = [];
     private $_apis = [];
+    static public $instances = [];
 
     public function __construct() {
         //初始化CURL
@@ -13,8 +13,8 @@ class Flume extends Core {
     }
 
     static public function instance($key = 'default') {
-        if(!isset(self::$_instances[$key])) self::$_instances[$key] = new self();
-        return self::$_instances[$key];
+        if(!isset(self::$instances[$key])) self::$instances[$key] = new self();
+        return self::$instances[$key];
     }
 
     public function post($data = []) {

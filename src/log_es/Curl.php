@@ -3,7 +3,7 @@ namespace Jingwu\LogEs;
 
 //1. post(url, data, header)                            //单独的URL
 //1. setheads(headers)->post(url, data, headers)                 //公用的头
-//$result = Curl::install()->post('http://www.ifeng.com');
+//$result = Curl::instance()->post('http://www.ifeng.com');
 //{
 //    "version": "",
 //    "code": "",
@@ -17,17 +17,17 @@ namespace Jingwu\LogEs;
 
 class Curl extends Core {
 
-    static $_instances = [];
-    private $_headers  = [];
     private $_isZip = 0;
+    private $_headers  = [];
+    static public $instances = [];
     public function __construct() {
     }
 
     static public function instance($key = 'default') {
-        if(!isset(self::$_instances[$key])) {
-            self::$_instances[$key] = new self($key);
+        if(!isset(self::$instances[$key])) {
+            self::$instances[$key] = new self($key);
         }
-        return self::$_instances[$key];
+        return self::$instances[$key];
     }
 
     public function setHeadersCommon($headers = []) {
@@ -90,11 +90,11 @@ class Curl extends Core {
     }
 
     static public function parseResponse($response) {
-        list($headerRaw, $body) = explode("\r\n\r\n", $response, 2);
-        list($first, $headerArr) = explode("\r\n", $headerRaw, 2);
-        list($version, $code, $codeTitle) = explode(' ', $first, 3);
         $headers = [];
-        $headerLines = explode("\r\n", $headerArr);
+        list($headerRaw, $body) = explode("\r\n\r\n", $response, 2);
+        $headerLines = explode("\r\n", $headerRaw);
+        $first       = array_shift($headerLines);
+        list($version, $code, $codeTitle) = explode(' ', $first, 3);
         foreach($headerLines as $line) {
             list($key, $value) = explode(": ", $line, 2);
             $headers[$key]     = $value;
@@ -114,13 +114,13 @@ class Curl extends Core {
 
 
 /**
-$result = Curl::install()->post('http://www.ifeng.com');        print_r($result);
-$result = Curl::install()->get('http://www.ifeng.com');         print_r($result);
-$result = Curl::install()->putt('http://www.ifeng.com');        print_r($result);
-$result = Curl::install()->head('http://www.ifeng.com');        print_r($result);
-$result = Curl::install()->delete('http://www.ifeng.com');      print_r($result);
-$result = Curl::install()->patch('http://www.ifeng.com');       print_r($result);
-$result = Curl::install()->get('http://www.ifeng.com');         print_r($result);
-$result = Curl::install()->get('http://www.ifeng.com');         print_r($result);
+$result = Curl::instance()->post('http://www.ifeng.com');        print_r($result);
+$result = Curl::instance()->get('http://www.ifeng.com');         print_r($result);
+$result = Curl::instance()->putt('http://www.ifeng.com');        print_r($result);
+$result = Curl::instance()->head('http://www.ifeng.com');        print_r($result);
+$result = Curl::instance()->delete('http://www.ifeng.com');      print_r($result);
+$result = Curl::instance()->patch('http://www.ifeng.com');       print_r($result);
+$result = Curl::instance()->get('http://www.ifeng.com');         print_r($result);
+$result = Curl::instance()->get('http://www.ifeng.com');         print_r($result);
  */
 
