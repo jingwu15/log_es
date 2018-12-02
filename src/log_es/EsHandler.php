@@ -22,7 +22,7 @@ class EsHandler extends AbstractProcessingHandler {
         unset($row['datetime']);
         $result = LogQueue::instance('client')->usePut($this->_logkey, json_encode($row));
         if(!$result) 
-            file_put_contents("/tmp/log_queue.log", date("Y-m-d H:i:s")."\t{$this->_logkey}\t".json_encode($row), FILE_APPEND);
+            file_put_contents("/tmp/log_queue.log", date("Y-m-d H:i:s")."\t{$this->_logkey}\t".json_encode($row)."\n", FILE_APPEND);
     }
 
     public function setFormatter($formatter) {

@@ -1,6 +1,5 @@
 <?php
 /**
- * @node_name 日志基础服务
  * Desc: 日志基础服务
  * User: <lideqiang@yundun.com>
  * Date: 2018/9/27 9:47
@@ -11,21 +10,35 @@
 namespace Jingwu\LogEs;
 
 use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Formatter\JsonFormatter;
 
 class LogClient extends Core {
 
-    protected $_logkey = '';
-    static public $logkeys = [];
-    static public $loggers = [];
+    const DEBUG    = 100;        //Logger::DEBUG
+    const INFO     = 200;        //Logger::INFO
+    const NOTICE   = 250;        //Logger::NOTICE
+    const WARNING  = 300;        //Logger::WARNING
+    const ERROR    = 400;        //Logger::ERROR
+    const CRITICAL = 500;        //Logger::CRITICAL
+
+    protected $_logkey       = '';
+    protected $_level        = Logger::DEBUG;
+    protected $_useEs        = true;
+    protected $_useFile      = false;
+    protected $_useStdout    = false;
+    static public $loggers   = [];
     static public $instances = [];
 
     public function __construct($logkey) {
         $this->_logkey = $logkey;
     }
 
-    static public function instance($logkey) {
+    static public function instance($logkey = 'default') {
+        $logkey = trim($logkey);
+        if(empty($logkey)) throw new Exception('logkey is empty');
+
         if(!isset(self::$instances[$logkey])) self::$instances[$logkey] = new self($logkey);
         return self::$instances[$logkey];
     }
@@ -37,33 +50,66 @@ class LogClient extends Core {
         return $result;
     }
 
+    public function setLevel($level = Logger::DEBUG) {
+        $this->_level = $level;
+        $this->resetLogger();
+        return $this;
+    }
+
+    public function useFile($flag = false) {
+        $this->_useFile = $flag ? true : false;
+        $this->resetLogger();
+        return $this;
+    }
+
+    public function useStdout($flag = false) {
+        $this->_useStdout = $flag ? true : false;
+        $this->resetLogger();
+        return $this;
+    }
+
+    public function useEs($flag = true) {
+        $this->_useEs = $flag ? true : false;
+        $this->resetLogger();
+        return $this;
+    }
+
     public function debug($msg) {
-        self::logger($this->_logkey)->debug($msg);
+        $this->logger()->debug($msg);
     }
 
     public function info($msg) {
-        self::logger($this->_logkey)->info($msg);
+        $this->logger()->info($msg);
+    }
+
+    public function notice($msg) {
+        $this->logger()->notice($msg);
     }
 
     public function warn($msg) {
-        self::logger($this->_logkey)->warn($msg);
+        $this->logger()->warn($msg);
     }
 
     public function error($msg) {
-        self::logger($this->_logkey)->error($msg);
+        $this->logger()->error($msg);
     }
 
-    public function getFields() {
-        return self::parseField($this->_logkey);
+    public function resetLogger() {
+        unset(self::$loggers[$this->_logkey]);
+        $this->logger();
     }
 
-    static public function parseField($logkey = '') {
-        if(!isset(self::$logkeys[$logkey])) {
-            $fieldStr = Cfg::instance()->get("logs.{$logkey}");
-            if(!$fieldStr) return false;
-            self::$logkeys[$logkey] = array_map(function($v) { return trim($v); }, explode(',', $fieldStr));
+    public function logger() {
+        if(!isset(self::$loggers[$this->_logkey])) {
+            $logger = new Logger($this->_logkey);
+
+            if($this->_useEs)     self::setLoggerEs    ($logger, $this->_logkey, $this->_level);
+            if($this->_useStdout) self::setLoggerStdout($logger, $this->_logkey, $this->_level);
+            if($this->_useFile)   self::setLoggerFile  ($logger, $this->_logkey, $this->_level);
+
+            self::$loggers[$this->_logkey] = $logger;
         }
-        return self::$logkeys[$logkey];
+        return self::$loggers[$this->_logkey];
     }
 
     static public function setLogger($logkey, $logger, $level = Logger::DEBUG) {
@@ -73,19 +119,25 @@ class LogClient extends Core {
         self::$loggers[$logkey] = $logger;
     }
 
-    static public function getLogger($logkey) {
-        return isset(self::$loggers[$logkey]) ? self::$loggers[$logkey] : false;
+    static public function setLoggerStdout($logger, $logkey, $level = Logger::DEBUG) {
+        $logfile = 'php://stdout';
+        $streamHandler = new StreamHandler($logfile, $level);
+        $streamHandler->setFormatter(new LineFormatter("[%datetime%] %channel%.%level_name%: %message% %context% %extra% \n", '', true));
+        $logger->pushHandler($streamHandler);
     }
 
-    static public function logger($logkey, $level = Logger::DEBUG) {
-        if(!isset(self::$loggers[$logkey])) {
-            $logger = new Logger($logkey);
-            $esHandler = new EsHandler($logkey, $level);
-            $esHandler->setFormatter(new LineFormatter("[%datetime%] %channel%.%level_name%: %message% %context% %extra% \n", '', true));
-            $logger->pushHandler($esHandler);
-            self::$loggers[$logkey] = $logger;
-        }
-        return self::$loggers[$logkey];
+    static public function setLoggerFile($logger, $logkey, $level = Logger::DEBUG) {
+        $logfile = "/tmp/log_{$logkey}.log";
+        $streamHandler = new StreamHandler($logfile, $level);
+        $streamHandler->setFormatter(new LineFormatter("[%datetime%] %channel%.%level_name%: %message% %context% %extra% \n", '', true));
+        $logger->pushHandler($streamHandler);
     }
+
+    static public function setLoggerEs($logger, $logkey, $level = Logger::DEBUG) {
+        $esHandler = new EsHandler($logkey, $level);
+        $esHandler->setFormatter(new LineFormatter("[%datetime%] %channel%.%level_name%: %message% %context% %extra% \n", '', true));
+        $logger->pushHandler($esHandler);
+    }
+
 }
 

@@ -104,13 +104,26 @@ LogClient::instance($logkey)->add($data);
 ```
 $logkey = 'log_only_info';
 
+//设置错误级别
+LogClient::instance($logkey)->setLevel(LogClient::DEBUG);
+//设置是否使用ES记录日志     0不使用   1使用
+LogClient::instance($logkey)->useEs(1);
+//设置是否使用文件记录日志, 文件默认为 /tmp/log_#logkey#.log     0不使用   1使用
+LogClient::instance($logkey)->useFile(1);
+//设置日志是否使用屏幕方录日志     0不使用   1使用
+LogClient::instance($logkey)->useStdout(1);
+
+////调用链方式
+//LogClient::instance($logkey)->setLevel(LogClient::DEBUG)->useEs(1)->useFile(1)->useStdout(1);
+
 LogClient::instance($logkey)->debug("this is debug");
 LogClient::instance($logkey)->info("this is info");
+LogClient::instance($logkey)->notice("this is notice");
 LogClient::instance($logkey)->warn("this is warn");
 LogClient::instance($logkey)->error("this is error");
 ```
 
-#### 3.3 debug/info/warn/error日志 添加文件输出
+#### 3.3 debug/info/notice/warn/error日志 添加自定义文件输出
 ```
 $logkey = 'log_only_info';
 $logfile = '/tmp/log_test_loges.log';
@@ -134,6 +147,7 @@ LogClient::setLogger($logkey, $logger);
 //正常的使用 LogClient
 LogClient::instance($logkey)->debug("this is debug");
 LogClient::instance($logkey)->info("this is info");
+LogClient::instance($logkey)->notice("this is notice");
 LogClient::instance($logkey)->warn("this is warn");
 LogClient::instance($logkey)->error("this is error");
 ```
