@@ -35,13 +35,13 @@ class Flume extends Core {
     }
 
     public function _formatLogFile($prefix) {
-        $prefix = in_array(substr($prefix, -1), ['_', '-']) ? substr($prefix, 0, -1) : $prefix;
-        $tmpdir = Cfg::instance()->get('tmpdir');
-        $logLock    = "{$tmpdir}/logauto_{$prefix}.lock";
-        $logError   = "{$tmpdir}/logauto_{$prefix}.error.log";
-        $logFile    = "{$tmpdir}/logauto_{$prefix}.log";
-        $logTmp     = "{$tmpdir}/logauto_{$prefix}.log.tmp";
-        $logCorrect = "{$tmpdir}/logauto_{$prefix}.log.correct";
+        $prefix     = in_array(substr($prefix, -1), ['_', '-']) ? substr($prefix, 0, -1) : $prefix;
+        $logdir     = Cfg::instance()->get('logdir');
+        $logLock    = "{$logdir}/logauto_{$prefix}.lock";
+        $logError   = "{$logdir}/logauto_{$prefix}.error.log";
+        $logFile    = "{$logdir}/logauto_{$prefix}.log";
+        $logTmp     = "{$logdir}/logauto_{$prefix}.log.tmp";
+        $logCorrect = "{$logdir}/logauto_{$prefix}.log.correct";
         return [$logLock, $logError, $logFile, $logTmp, $logCorrect];
     }
 
@@ -120,7 +120,7 @@ class Flume extends Core {
             }
             $this->post($logs);
             $ids = array_merge($ids, $idsCorrect, $idsError);
-            foreach($ids as $id) $log->delete(1);
+            foreach($ids as $id) $log->delete($id);
             $fp = fopen($logLock, 'a+');
             flock($fp, LOCK_EX);
             self::lockAppend($logError, implode("\n", $logsError)."\n");

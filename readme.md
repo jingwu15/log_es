@@ -84,6 +84,27 @@ Cfg::instance()->setTmpdir('/tmp');
 Cfg::instance()->setLogpre('log_');
 ```
 
+##### 2.7 使用conf文件配置
+```
+[log]
+logdir = /tmp
+logpre = log_
+
+[beanstalk]
+host = 127.0.0.1
+port = 11300
+
+[flume]
+api0 = 127.0.0.1:51140
+api1 = 127.0.0.1:51141
+api2 = 127.0.0.1:51142
+api3 = 127.0.0.1:51143
+api3 = 127.0.0.1:51144
+
+[es]
+api0 = 127.0.0.1:9201
+```
+
 #### 3. 使用
 
 注意：日志生成时，没有对文档格式进行严格校验，在写入ES时会校验，格式不匹配的，会邮件告警

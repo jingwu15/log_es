@@ -28,11 +28,14 @@ class LogClient extends Core {
     protected $_useEs        = true;
     protected $_useFile      = false;
     protected $_useStdout    = false;
+    protected $_queuefile    = '';
     static public $loggers   = [];
     static public $instances = [];
 
     public function __construct($logkey) {
         $this->_logkey = $logkey;
+        $logdir = Cfg::instance()->get('logdir');
+        $this->_queueFile = "{$logdir}/log_queue.log";
     }
 
     static public function instance($logkey = 'default') {
@@ -46,7 +49,7 @@ class LogClient extends Core {
     public function add($row) {
         $result = LogQueue::instance('client')->usePut($this->_logkey, json_encode($row));
         if(!$result) 
-            file_put_contents("/tmp/log_queue.log", date("Y-m-d H:i:s")."\t{$this->_logkey}\t".json_encode($row), FILE_APPEND);
+            file_put_contents($this->_queuefile, date("Y-m-d H:i:s")."\t{$this->_logkey}\t".json_encode($row), FILE_APPEND);
         return $result;
     }
 
@@ -127,7 +130,9 @@ class LogClient extends Core {
     }
 
     static public function setLoggerFile($logger, $logkey, $level = Logger::DEBUG) {
-        $logfile = "/tmp/log_{$logkey}.log";
+        $logdir = Cfg::instance()->get('logdir');
+        $logpre = Cfg::instance()->get('logpre');
+        $logfile = "{$logdir}/{$logpre}{$logkey}.log";
         $streamHandler = new StreamHandler($logfile, $level);
         $streamHandler->setFormatter(new LineFormatter("[%datetime%] %channel%.%level_name%: %message% %context% %extra% \n", '', true));
         $logger->pushHandler($streamHandler);

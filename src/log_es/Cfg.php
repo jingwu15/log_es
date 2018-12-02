@@ -18,7 +18,7 @@ class Cfg extends Core {
             ],
             'flume' => [],
             'es' => [],
-            'tmpdir' => '/tmp',
+            'logdir' => '/tmp',
             'logpre' => 'log_',
         ];
     }
@@ -55,9 +55,9 @@ class Cfg extends Core {
         $this->_cfg['mails'] = $mails;
     }
 
-    public function setTmpdir($tmpdir) {
-        $this->_cfg['tmpdir'] = $tmpdir;
-        $this->_cfg['tmpdir'] = $this->_formatPath($this->_cfg['tmpdir']);
+    public function setLogdir($logdir) {
+        $this->_cfg['logdir'] = $logdir;
+        $this->_cfg['logdir'] = $this->_formatPath($this->_cfg['logdir']);
     }
 
     public function setLogpre($logpre) {
@@ -86,9 +86,9 @@ class Cfg extends Core {
 
     public function check() {
         if(!$this->_cfg['beanstalk']) return ['code' => 0, "error" => "beanstalk noset"];
-        if(!$this->_cfg['flume']) return ['code' => 0, "error" => "flume noset"    ];
-        if(!$this->_cfg['es']) return ['code' => 0, "error" => "es noset"       ];
-        if(!$this->_cfg['mails']) return ['code' => 0, "error" => "mail noset"     ];
+        if(!$this->_cfg['flume'])     return ['code' => 0, "error" => "flume noset"    ];
+        if(!$this->_cfg['es'])        return ['code' => 0, "error" => "es noset"       ];
+        if(!$this->_cfg['mails'])     return ['code' => 0, "error" => "mail noset"     ];
 
         $cfgBs = $this->_cfg['beanstalk'];
         if(!$cfgBs['host'] || !$cfgBs['port']) return ['code' => 0, "error" => "beanstalk set error"];
