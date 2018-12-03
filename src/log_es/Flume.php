@@ -113,7 +113,7 @@ class Flume extends Core {
                         continue;
                     }
                     $ids[] = $job['id'];
-                    $logs[] = ["headers" => ["topic" => $tube."_".date('Y_m')], "body" => $job["body"]];
+                    $logs[] = ["headers" => ["topic" => $tube], "body" => $job["body"]];
                     $count++;
                     $total++;
                 }
@@ -229,7 +229,7 @@ class Flume extends Core {
                     }
                 }
                 if($flag) {
-                    $logs[] = ["headers" => ["topic" => $logkey."_".date('Y_m')], "body" => $lArr[2]];
+                    $logs[] = ["headers" => ["topic" => $logkey], "body" => $lArr[2]];
                     $count++;
                 } else {
                     $logsCorrect[] = $line;
