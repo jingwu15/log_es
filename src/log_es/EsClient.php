@@ -22,6 +22,7 @@ class EsClient extends Core {
     static public $instances = [];
 
     public function __construct($doc = '') {
+        $doc = Cfg::instance()->get('logpre').$doc;
         $this->_doc = $doc;
     }
 
