@@ -46,14 +46,17 @@ class Flume extends Core {
     }
 
     public function listen($prefix = '') {
-        $prefix = $prefix ? $prefix : Cfg::instance()->get('logpre');
+        $prefix = $prefix ? trim($prefix) : trim(Cfg::instance()->get('logpre'));
+        if(!$prefix) throw new \Exception("the log prefix is not allow empty!");
         list($logLock, $logError, $logFile, $logTmp, $logCorrect) = $this->_formatLogFile($prefix);
 
         $limitMail = 300;   //间隔5分钟
         $limitTotal = 50000;
-        $mailAt = $reconn = 0;
+        $reconn = 0;
+        $mailsNoDoc = [];
         $log = LogQueue::instance();
         while(1) {
+            sleep(1);
             //连接异常，重连
             if($reconn == 1) { sleep(1); $log->reconnect(); $reconn = 0; }
             print_r(sprintf("flume----%s\n", date("Y-m-d H:i:s")));
@@ -63,7 +66,7 @@ class Flume extends Core {
             $tubes = array_filter($rows, function($v) use($prefix) {return strpos($v, $prefix) === 0 ? true : false;});
             if(!$tubes) { sleep(1); continue; }
 
-            $logs = $logsCorrect = $logsError = $ids = $idsCorrect = $idsError = [];
+            $logs = $logsCorrect = $logsError = $ids = $idsCorrect = $idsError = $mailsDiff = [];
             $total = 0;
             foreach($tubes as $tube) {
                 //print_r("\ntube-{$tube}: start\n");
@@ -75,7 +78,7 @@ class Flume extends Core {
                     $result = EsClient::instance($doc)->getMap();
                     //没有取到文档结构，有可能是其他业务的日志，不做处理
                     if(!$result['code']) {
-                        if((time() - $mailAt) > $limitMail) $this->mailNoDoc($tube);
+                        if(!isset($mailsNoDoc[$tube])) $mailsNoDoc[$tube] = 0;
                         continue;
                     }
                     $tubeMap = $result['data'][$tube]["properties"];
@@ -110,6 +113,8 @@ class Flume extends Core {
                     if($diff) {        //有新增字段, 需要校正ES中的文档结构
                         $idsCorrect[] = $job['id'];
                         $logsCorrect[] = sprintf("%s\t%s\t%s\n", date('Y-m-d H:i:s'), $tube, $job['body']);
+                        if(!isset($mailsDiff[$logkey])) $mailsDiff[$logkey] = [];
+                        $mailsDiff[$logkey][] = implode(", ", $diff);
                         continue;
                     }
                     $ids[] = $job['id'];
@@ -121,19 +126,25 @@ class Flume extends Core {
             $this->post($logs);
             $ids = array_merge($ids, $idsCorrect, $idsError);
             foreach($ids as $id) $log->delete($id);
+            //邮件
+            foreach($mailsNoDoc as $logkey => &$ctime) {
+                if(!$ctime) { $this->mailNoDoc($logkey); $ctime = time(); }
+                if((time() - $ctime) > $limitMail) unset($mailsNoDoc[$logkey]);
+            }
+            foreach($mailsDiff as $logkey => $bodys) $this->mailLackField($logkey, implode("\r\n<br/>", array_unique($bodys)));
             $fp = fopen($logLock, 'a+');
             flock($fp, LOCK_EX);
             self::lockAppend($logError, implode("\n", $logsError)."\n");
             self::lockAppend($logCorrect, implode("\n", $logsCorrect)."\n");
             flock($fp, LOCK_UN);
             fclose($fp);
-            $mailAt = (time() - $mailAt) > $limitMail ? time() : $mailAt;
         }
     }
 
     //校正少字段的文档
     public function correct($prefix = '') {
-        $prefix = $prefix ? $prefix : Cfg::instance()->get('logpre');
+        $prefix = $prefix ? trim($prefix) : trim(Cfg::instance()->get('logpre'));
+        if(!$prefix) throw new \Exception("the log prefix is not allow empty!");
         list($logLock, $logError, $logFile, $logTmp, $logCorrect) = $this->_formatLogFile($prefix);
 
         //初始化时，校验是否未完成，重新修正
@@ -155,6 +166,9 @@ class Flume extends Core {
             fclose($fp);
         }
 
+        $limitMail = 300;
+        $limitTotal = 10000;
+        $mailsDiff = [];
         while(1) {
             //5秒执行一次
             sleep(5);
@@ -167,12 +181,9 @@ class Flume extends Core {
             flock($fp, LOCK_UN);
             fclose($fp);
 
-            $limitTotal = 10000;
             $logs = $logsCorrect = $logsError = [];
             $count = $countCorrect = $countError = $exit = 0;
             $fp = fopen($logTmp, 'r');
-            $ii = 0;
-            $mails = [];
             while(1) {
                 if($count > $limitTotal || $exit) {
                     //写入Flume, 并重新计数
@@ -212,32 +223,34 @@ class Flume extends Core {
                     }
                     $logkeys[$logkey] = isset($logkeys[$logkey]) ? $logkeys[$logkey] : [];
                 }
-                $flag = 0;
-                if($logkeys[$logkey]) {
-                    $jdata = json_decode($lArr[2], 1);
-                    //不能正确的解析json, 则格式不正确，丢弃
-                    if(!$jdata) {
-                        $logsError[] = $line;
-                        $countError++;
-                        continue;
-                    }
-                    $diff = array_diff(array_keys($jdata), $logkeys[$logkey]);
-                    if($diff) {
-                        if(!isset($mails[$logkey])) $mails[$logkey] = implode(", ", $diff);
-                    } else {
-                        $flag = 1;
-                    }
+                $jdata = json_decode($lArr[2], 1);
+                //不能正确的解析json, 则格式不正确，丢弃
+                if(!$jdata) {
+                    $logsError[] = $line;
+                    $countError++;
+                    continue;
                 }
-                if($flag) {
-                    $logs[] = ["headers" => ["topic" => $logkey], "body" => $lArr[2]];
-                    $count++;
-                } else {
+                $diff = array_diff(array_keys($jdata), $logkeys[$logkey]);
+                if($logkeys[$logkey] && $diff) {
+                    if(!isset($mailsDiff[$logkey])) $mailsDiff[$logkey] = ['ctime' => 0, 'bodys' => []];
+                    $mailsDiff[$logkey]['bodys'][] = implode(", ", $diff);
                     $logsCorrect[] = $line;
                     $countCorrect++;
+                } else {
+                    $logs[] = ["headers" => ["topic" => $logkey], "body" => $lArr[2]];
+                    $count++;
                 }
             }
 
-            foreach($mails as $logkey => $body) $this->mailLackField($logkey, $body);
+            //发邮件
+            foreach($mailsDiff as $logkey => &$row) {
+                $row['bodys'] = array_unique($row['bodys']);
+                if(!$row['ctime']) {
+                    $row['ctime'] = time();
+                    $this->mailLackField($logkey, implode("\r\n<br/>", $row['bodys']));
+                }
+                if((time() - $row['ctime']) > $limitMail) unset($mailsDiff[$logkey]);
+            }
 
             //锁定配置文件，本次校正结束
             $fp = fopen($logLock, 'w+');

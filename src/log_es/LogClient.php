@@ -47,9 +47,10 @@ class LogClient extends Core {
     }
 
     public function add($row) {
-        $result = LogQueue::instance('client')->usePut($this->_logkey, json_encode($row));
+        $logkey = Cfg::instance()->get('logpre').$this->_logkey;
+        $result = LogQueue::instance('client')->usePut($logkey, json_encode($row));
         if(!$result) 
-            file_put_contents($this->_queuefile, date("Y-m-d H:i:s")."\t{$this->_logkey}\t".json_encode($row), FILE_APPEND);
+            file_put_contents($this->_queuefile, date("Y-m-d H:i:s")."\t{$logkey}\t".json_encode($row), FILE_APPEND);
         return $result;
     }
 
