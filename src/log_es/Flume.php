@@ -54,7 +54,7 @@ class Flume extends Core {
         $limitMail = Cfg::instance()->get('mail.interval');   //间隔5分钟
         $limitTotal = 50000;
         $reconn = 0;
-        $mailsNoDoc = [];
+        $mailsNoDoc = $mailsDiff = [];
         $log = LogQueue::instance();
         while(1) {
             sleep(1);
@@ -67,7 +67,7 @@ class Flume extends Core {
             $tubes = array_filter($rows, function($v) use($prefix) {return strpos($v, $prefix) === 0 ? true : false;});
             if(!$tubes) { sleep(1); continue; }
 
-            $logs = $logsCorrect = $logsError = $ids = $idsCorrect = $idsError = $mailsDiff = [];
+            $logs = $logsCorrect = $logsError = $ids = $idsCorrect = $idsError = [];
             $total = 0;
             foreach($tubes as $tube) {
                 //print_r("\ntube-{$tube}: start\n");
@@ -90,14 +90,9 @@ class Flume extends Core {
                 $stats = $log->statsTube($tube);
                 if($stats === false) { $reconn = 1; break; }
                 if(!$stats['current-jobs-ready']) continue;
-                $result = $log->watch($tube);
-                if($result === false) { $reconn = 1; break; }
-                $tubesWatched = $log->listTubesWatched();
-                if($tubesWatched === false) { $reconn = 1; break; }
-                foreach($tubesWatched as $tubeIgnore => $row) {
-                    if($tubeIgnore != $tube) $log->ignore($tubeIgnore);
-                }
                 $count = 0;
+                $log->reconnect();
+                $result = $log->watch($tube);
                 //print_r("tube-{$tube}-count: {$count}\n");
                 while($count < $stats['current-jobs-ready']) {
                     if($total > $limitTotal) { break; }
@@ -312,7 +307,7 @@ class Flume extends Core {
     }
 
     public function mailLackField($logkey, $fieldStr) {
-        $body = "日志结构有变更，缺少字段: {$fieldStr}，请及时更新ES结构! ";
+        $body = "日志[{$logkey}]结构有变更，缺少字段: {$fieldStr}，请及时更新ES结构! ";
         $this->sendmail($logkey, $body);
     }
 
@@ -322,7 +317,7 @@ class Flume extends Core {
     }
 
     public function sendmail($logkey, $body) {
-        $mails = Cfg::instance()->get('mails');
+        $mails = Cfg::instance()->get('mail.mails');
         $subject = "日志结构变更[{$logkey}]";
 $html = <<<EOF
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
