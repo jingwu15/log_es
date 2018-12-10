@@ -60,7 +60,7 @@ class Cfg extends Core {
     }
 
     public function setMailInterval($interval) {
-        $interval = int($interval);
+        $interval = intval($interval);
         $interval = $interval > 60 ? $interval : 60;
         $this->_cfg['mail']['interval'] = $interval;
     }
