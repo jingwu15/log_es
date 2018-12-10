@@ -109,7 +109,7 @@ class Flume extends Core {
                     //print_r("tube-{$tube}-diff: ".json_encode($diff, JSON_UNESCAPED_UNICODE)."\n");
                     if($diff) {        //有新增字段, 需要校正ES中的文档结构
                         $idsCorrect[]  = $job['id'];
-                        $logsCorrect[] = sprintf("%s\t%s\t%s\n", date('Y-m-d H:i:s'), $tube, $job['body']);
+                        $logsCorrect[] = sprintf("%s\t%s\t%s", date('Y-m-d H:i:s'), $tube, json_encode($jdata));
 
                         $body = implode(", ", $diff);
                         $diffKey = md5($tube.$body);
@@ -212,6 +212,7 @@ class Flume extends Core {
                 $line = trim(fgets($fp));
                 if(!$line) continue;
                 $lArr = explode("\t", $line, 3);
+                if(count($lArr) < 3) { $logsError[] = $line; $countError++; continue; }
                 $logkey = $lArr[1];
                 if(!isset($logkeys[$logkey])) {
                     $doc = substr($logkey, strlen($logpre));
@@ -231,11 +232,7 @@ class Flume extends Core {
                 }
                 $jdata = json_decode($lArr[2], 1);
                 //不能正确的解析json, 则格式不正确，丢弃
-                if(!$jdata) {
-                    $logsError[] = $line;
-                    $countError++;
-                    continue;
-                }
+                if(!$jdata) { $logsError[] = $line; $countError++; continue; }
                 $diff = array_diff(array_keys($jdata), $logkeys[$logkey]);
                 if($logkeys[$logkey] && $diff) {
                     $logsCorrect[] = $line;
