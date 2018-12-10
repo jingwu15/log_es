@@ -20,9 +20,13 @@ class Cfg extends Core {
             'es' => [],
             'logdir' => '/tmp',
             'logpre' => 'log_',
+            'mail'  => [
+                'mails' => [],
+                'interval' => 300,
+            ],
         ];
     }
-    
+
     static public function instance($key = 'default') {
         if(!isset(self::$instances[$key])) {
             self::$instances[$key] = new self();
@@ -52,7 +56,13 @@ class Cfg extends Core {
 
     public function setMails($mails) {
         if(!$this->_formatStrArr($mails)) return false;
-        $this->_cfg['mails'] = $mails;
+        $this->_cfg['mail']['mails'] = $mails;
+    }
+
+    public function setMailInterval($interval) {
+        $interval = int($interval);
+        $interval = $interval > 60 ? $interval : 60;
+        $this->_cfg['mail']['interval'] = $interval;
     }
 
     public function setLogdir($logdir) {
