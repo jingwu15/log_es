@@ -28,7 +28,7 @@ class LogClient extends Core {
     protected $_useEs        = true;
     protected $_useFile      = false;
     protected $_useStdout    = false;
-    protected $_queuefile    = '';
+    protected $_queueFile    = '';
     static public $loggers   = [];
     static public $instances = [];
 
@@ -48,9 +48,10 @@ class LogClient extends Core {
 
     public function add($row) {
         $logkey = Cfg::instance()->get('logpre').$this->_logkey;
-        $result = LogQueue::instance('client')->usePut($logkey, json_encode($row));
+        $body = json_encode($row);
+        $result = LogQueue::instance('client')->usePut($logkey, $body);
         if(!$result) 
-            file_put_contents($this->_queuefile, date("Y-m-d H:i:s")."\t{$logkey}\t".json_encode($row), FILE_APPEND);
+            file_put_contents($this->_queueFile, date("Y-m-d H:i:s")."\t{$logkey}\t{$body}\n", FILE_APPEND);
         return $result;
     }
 

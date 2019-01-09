@@ -25,9 +25,10 @@ class EsHandler extends AbstractProcessingHandler {
         $row["create_at"] = $row["datetime"]->format('Y-m-d H:i:s');
         $row["timezone"]  = $row["datetime"]->getTimezone()->getName();
         unset($row['datetime']);
-        $result = LogQueue::instance('client')->usePut($logkey, json_encode($row));
+        $body = json_encode($row);
+        $result = LogQueue::instance('client')->usePut($logkey, $body);
         if(!$result) 
-            file_put_contents($this->_queueFile, date("Y-m-d H:i:s")."\t{$logkey}\t".json_encode($row)."\n", FILE_APPEND);
+            file_put_contents($this->_queueFile, date("Y-m-d H:i:s")."\t{$logkey}\t{$body}\n", FILE_APPEND);
     }
 
     public function setFormatter($formatter) {
