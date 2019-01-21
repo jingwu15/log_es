@@ -68,7 +68,7 @@ class Curl extends Core {
         if($this->_isZip) {
             $headers['Content-Encoding'] = 'gzip';
             //$headers['Accept-Encoding'] = 'gzip';
-            $data = is_string($data) ? gzencode($data) : gzencode(json_encode($data));
+            $data = is_string($data) ? gzencode($data) : gzencode(json_encode($data, JSON_UNESCAPED_UNICODE));
         }
 
         $curl = curl_init();

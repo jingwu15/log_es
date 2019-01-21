@@ -62,7 +62,7 @@ class EsClient extends Core {
 
     public function get($where) {
         $body    = $this->_parseWhere($where);
-        $params  = ['index' => $this->_doc, 'body' => json_encode($body)];
+        $params  = ['index' => $this->_doc, 'body' => json_encode($body, JSON_UNESCAPED_UNICODE)];
         $result  = $this->_cmd('search', $params);
         $resultF = $this->_formatResult($result);
         if($resultF['status']) $resultF['data'] = $resultF['data'][0];
@@ -74,7 +74,7 @@ class EsClient extends Core {
         if($sorts && is_array($sorts)) $body['sort'] = $sorts;
         $body["from"] = ($page - 1) * $pagesize;
         $body["size"] = $pagesize;
-        $params = ['index' => $this->_doc, 'body' => json_encode($body)];
+        $params = ['index' => $this->_doc, 'body' => json_encode($body, JSON_UNESCAPED_UNICODE)];
         $result = $this->_cmd('search', $params);
         return $this->_formatResult($result);
     }
@@ -87,14 +87,14 @@ class EsClient extends Core {
     public function getsAll($where, $sorts = null) {
         $body = $this->_parseWhere($where);
         if($sorts && is_array($sorts)) $body['sort'] = $sorts;
-        $params = ['index' => $this->_doc, 'body' => json_encode($body)];
+        $params = ['index' => $this->_doc, 'body' => json_encode($body, JSON_UNESCAPED_UNICODE)];
         $result = $this->_cmd('search', $params);
         return $this->_formatResult($result);
     }
 
     public function count($where) {
         $body = $this->_parseWhere($where);
-        $params = ['index' => $this->_doc, 'body' => json_encode($body)];
+        $params = ['index' => $this->_doc, 'body' => json_encode($body, JSON_UNESCAPED_UNICODE)];
         $result = $this->_cmd('count', $params);
 
         $resp = ["status" => 0, "error" => $result["error"], "total" => 0];

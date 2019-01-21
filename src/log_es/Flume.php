@@ -18,7 +18,7 @@ class Flume extends Core {
     }
 
     public function post($data = []) {
-        $json = is_string($data) ? $data : json_encode($data, 1);
+        $json = is_string($data) ? $data : json_encode($data, JSON_UNESCAPED_UNICODE);
         $result = $ids  = [];
         $j = 0;
         for($i = 0; $i < 3; $i++) {
@@ -109,7 +109,7 @@ class Flume extends Core {
                     //print_r("tube-{$tube}-diff: ".json_encode($diff, JSON_UNESCAPED_UNICODE)."\n");
                     if($diff) {        //有新增字段, 需要校正ES中的文档结构
                         $idsCorrect[]  = $job['id'];
-                        $logsCorrect[] = sprintf("%s\t%s\t%s", date('Y-m-d H:i:s'), $tube, json_encode($jdata));
+                        $logsCorrect[] = sprintf("%s\t%s\t%s", date('Y-m-d H:i:s'), $tube, json_encode($jdata, JSON_UNESCAPED_UNICODE));
 
                         $body = implode(", ", $diff);
                         $diffKey = md5($tube.$body);
@@ -221,11 +221,11 @@ class Flume extends Core {
                     $resultYm = EsClient::instance($docYm)->getMap();
                     //没有取到文档结构，有可能是其他业务的日志，不做处理
                     if($result['code']) {
-                        //var_dump(date("Y-m-d H:i:s")."\t{$doc}\t".json_encode($result));
+                        //var_dump(date("Y-m-d H:i:s")."\t{$doc}\t".json_encode($result, JSON_UNESCAPED_UNICODE));
                         $logkeys[$logkey] = array_keys($result['data'][$logkey]["properties"]);
                     }
                     if($resultYm['code']) {
-                        //var_dump(date("Y-m-d H:i:s")."\t{$docYm}\t".json_encode($resultYm));
+                        //var_dump(date("Y-m-d H:i:s")."\t{$docYm}\t".json_encode($resultYm, JSON_UNESCAPED_UNICODE));
                         $logkeys[$logkey] = array_keys($resultYm['data'][$logkey]["properties"]);
                     }
                     $logkeys[$logkey] = isset($logkeys[$logkey]) ? $logkeys[$logkey] : [];
@@ -348,7 +348,7 @@ EOF;
                 'type'       => 'html',
                 //'plat'       => 'plat',
                 'email_type' => 'trigger',
-            ]);
+            ], JSON_UNESCAPED_UNICODE);
             $ids[] = LogQueue::instance()->usePut('new_mailsend', $content);
         }
         return $ids;

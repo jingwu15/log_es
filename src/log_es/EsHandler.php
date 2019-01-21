@@ -25,7 +25,7 @@ class EsHandler extends AbstractProcessingHandler {
         $row["create_at"] = $row["datetime"]->format('Y-m-d H:i:s');
         $row["timezone"]  = $row["datetime"]->getTimezone()->getName();
         unset($row['datetime']);
-        $body = json_encode($row);
+        $body = json_encode($row, JSON_UNESCAPED_UNICODE);
         $result = LogQueue::instance('client')->usePut($logkey, $body);
         if(!$result) 
             file_put_contents($this->_queueFile, date("Y-m-d H:i:s")."\t{$logkey}\t{$body}\n", FILE_APPEND);

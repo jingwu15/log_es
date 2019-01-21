@@ -23,7 +23,9 @@ class LogClient extends Core {
     const ERROR    = 400;        //Logger::ERROR
     const CRITICAL = 500;        //Logger::CRITICAL
 
-    protected $_logkey       = '';
+    protected $_logkey       = '';      //无logpre的logkey
+    protected $_logfkey      = '';      //有logpre的logkey
+    protected $_logfile      = '';
     protected $_level        = Logger::DEBUG;
     protected $_useEs        = true;
     protected $_useFile      = false;
@@ -35,7 +37,10 @@ class LogClient extends Core {
     public function __construct($logkey) {
         $this->_logkey = $logkey;
         $logdir = Cfg::instance()->get('logdir');
+        $logpre = Cfg::instance()->get('logpre');
+        $this->_logfkey = "{$logpre}{$logkey}";
         $this->_queueFile = "{$logdir}/log_queue.log";
+        $this->_logfile = "{$logdir}/{$logpre}{$logkey}.log";
     }
 
     static public function instance($logkey = 'default') {
@@ -47,11 +52,20 @@ class LogClient extends Core {
     }
 
     public function add($row) {
-        $logkey = Cfg::instance()->get('logpre').$this->_logkey;
-        $body = json_encode($row);
-        $result = LogQueue::instance('client')->usePut($logkey, $body);
-        if(!$result) 
-            file_put_contents($this->_queueFile, date("Y-m-d H:i:s")."\t{$logkey}\t{$body}\n", FILE_APPEND);
+        $now = date("Y-m-d H:i:s");
+        if($this->_useEs) {
+            $body = json_encode($row, JSON_UNESCAPED_UNICODE);
+            $result = LogQueue::instance('client')->usePut($this->_logfkey, $body);
+            if(!$result) file_put_contents($this->_queueFile, "{$now}\t{$this->_logfkey}\t{$body}\n", FILE_APPEND);
+        }
+        if($this->_useFile) {
+            $body = json_encode($row, JSON_UNESCAPED_UNICODE);
+            file_put_contents($this->_logfile, "{$now}\t{$this->_logfkey}\t{$body}\n", FILE_APPEND);
+        }
+        if($this->_useStdout) {
+            $body = json_encode($row, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            print_r("{$now}\t{$this->_logfkey}\t{$body}\n");
+        }
         return $result;
     }
 
@@ -109,8 +123,8 @@ class LogClient extends Core {
             $logger = new Logger($this->_logkey);
 
             if($this->_useEs)     self::setLoggerEs    ($logger, $this->_logkey, $this->_level);
-            if($this->_useStdout) self::setLoggerStdout($logger, $this->_logkey, $this->_level);
-            if($this->_useFile)   self::setLoggerFile  ($logger, $this->_logkey, $this->_level);
+            if($this->_useStdout) self::setLoggerStdout($logger, $this->_level);
+            if($this->_useFile)   self::setLoggerFile  ($logger, $this->_logfile, $this->_level);
 
             self::$loggers[$this->_logkey] = $logger;
         }
@@ -124,17 +138,14 @@ class LogClient extends Core {
         self::$loggers[$logkey] = $logger;
     }
 
-    static public function setLoggerStdout($logger, $logkey, $level = Logger::DEBUG) {
+    static public function setLoggerStdout($logger, $level = Logger::DEBUG) {
         $logfile = 'php://stdout';
         $streamHandler = new StreamHandler($logfile, $level);
         $streamHandler->setFormatter(new LineFormatter("[%datetime%] %channel%.%level_name%: %message% %context% %extra% \n", '', true));
         $logger->pushHandler($streamHandler);
     }
 
-    static public function setLoggerFile($logger, $logkey, $level = Logger::DEBUG) {
-        $logdir = Cfg::instance()->get('logdir');
-        $logpre = Cfg::instance()->get('logpre');
-        $logfile = "{$logdir}/{$logpre}{$logkey}.log";
+    static public function setLoggerFile($logger, $logfile, $level = Logger::DEBUG) {
         $streamHandler = new StreamHandler($logfile, $level);
         $streamHandler->setFormatter(new LineFormatter("[%datetime%] %channel%.%level_name%: %message% %context% %extra% \n", '', true));
         $logger->pushHandler($streamHandler);
