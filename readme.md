@@ -31,7 +31,7 @@
 ```json
     {
         "require": {
-            "jingwu/log_es": "0.1.8"
+            "jingwu/log_es": "0.2.5"
         }
     }
 ```
