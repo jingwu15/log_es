@@ -2,9 +2,10 @@
 
 namespace Jingwu\LogEs;
 
-use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Formatter\JsonFormatter;
+use Monolog\Formatter\FormatterInterface;
+use Monolog\Handler\AbstractProcessingHandler;
 
 class EsHandler extends AbstractProcessingHandler {
 
@@ -31,7 +32,7 @@ class EsHandler extends AbstractProcessingHandler {
             file_put_contents($this->_queueFile, date("Y-m-d H:i:s")."\t{$logkey}\t{$body}\n", FILE_APPEND);
     }
 
-    public function setFormatter($formatter) {
+    public function setFormatter(FormatterInterface $formatter) {
         return parent::setFormatter($formatter);
     }
 
