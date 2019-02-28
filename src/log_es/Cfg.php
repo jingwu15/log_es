@@ -20,6 +20,9 @@ class Cfg extends Core {
             'es' => [],
             'logdir' => '/tmp',
             'logpre' => 'log_',
+            'limit' => [
+                'limit_write' => 50000,
+            ],
             'mail'  => [
                 'mails' => [],
                 'interval' => 300,
@@ -77,6 +80,10 @@ class Cfg extends Core {
 
     public function setMqEsdoc($mqEsdoc) {
         $this->_cfg['mq_esdoc'] = $mqEsdoc ? $mqEsdoc : $this->_cfg['mq_esdoc'];
+    }
+
+    public function setLimitWrite($limitWrite = 50000) {
+        $this->_cfg['limit']['limit_write'] = $limitWrite ? $limitWrite : $this->_cfg['limit']['limit_write'];
     }
 
     public function get($key) {

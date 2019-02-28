@@ -53,7 +53,7 @@ class Flume extends Core {
 
         $limitMail = Cfg::instance()->get('mail.interval');   //间隔5分钟
         $mqDocMap = Cfg::instance()->get('mq_esdoc');   //mq 与 es文档的映射
-        $limitTotal = 50000;
+        $limitWrite = Cfg::instance()->get('limit.limit_write');   //写入限制，每次读取多少条数据写入ES
         $reconn = 0;
         $mailsNoDoc = $mailsDiff = [];
         $log = LogQueue::instance();
@@ -73,7 +73,7 @@ class Flume extends Core {
             foreach($tubes as $tube) {
                 //print_r("\ntube-{$tube}: start\n");
                 if($reconn == 1) break;
-                if($total > $limitTotal) { break; }
+                if($total > $limitWrite) { break; }
                 $esdoc = isset($mqDocMap[$tube]) ? $mqDocMap[$tube] : $tube;
                 $tubeMap = $tubeKeys = [];
                 if(!isset($tubeMap[$tube])) {
@@ -97,7 +97,7 @@ class Flume extends Core {
                 $result = $log->watch($tube);
                 //print_r("tube-{$tube}-count: {$count}\n");
                 while($count < $stats['current-jobs-ready']) {
-                    if($total > $limitTotal) { break; }
+                    if($total > $limitWrite) { break; }
                     $job    = $log->reserve(1);
                     if($job === false) { $reconn = 1; break; }
                     $jdata = json_decode($job["body"], 1);
@@ -173,7 +173,7 @@ class Flume extends Core {
         }
 
         $limitMail  = Cfg::instance()->get('mail.interval');   //间隔5分钟
-        $limitTotal = 10000;
+        $limitWrite = Cfg::instance()->get('limit.limit_write');   //写入限制，每次读取多少条数据写入ES
         $mailsDiff = [];
         while(1) {
             //5秒执行一次
@@ -192,19 +192,19 @@ class Flume extends Core {
             $count = $countCorrect = $countError = $exit = 0;
             $fp = fopen($logTmp, 'r');
             while(1) {
-                if($count > $limitTotal || $exit) {
+                if($count > $limitWrite || $exit) {
                     //写入Flume, 并重新计数
                     $this->post($logs);
                     $logs = [];
                     $count = 0;
                 }
-                if($countCorrect > $limitTotal || $exit) {
+                if($countCorrect > $limitWrite || $exit) {
                     $content = implode("\n", $logsCorrect);
                     if($content) self::lockAppend($logCorrect, $content."\n");
                     $logsCorrect = [];
                     $countCorrect = 0;
                 }
-                if($countError > $limitTotal || $exit) {
+                if($countError > $limitWrite || $exit) {
                     $content = implode("\n", $logsError);
                     if($content) self::lockAppend($logError, $content."\n");
                     $logsError = [];
