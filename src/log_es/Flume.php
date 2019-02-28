@@ -52,6 +52,7 @@ class Flume extends Core {
         list($logLock, $logError, $logFile, $logTmp, $logCorrect) = $this->_formatLogFile($prefix);
 
         $limitMail = Cfg::instance()->get('mail.interval');   //间隔5分钟
+        $mqDocMap = Cfg::instance()->get('mq_esdoc');   //mq 与 es文档的映射
         $limitTotal = 50000;
         $reconn = 0;
         $mailsNoDoc = $mailsDiff = [];
@@ -73,9 +74,10 @@ class Flume extends Core {
                 //print_r("\ntube-{$tube}: start\n");
                 if($reconn == 1) break;
                 if($total > $limitTotal) { break; }
+                $esdoc = isset($mqDocMap[$tube]) ? $mqDocMap[$tube] : $tube;
                 $tubeMap = $tubeKeys = [];
                 if(!isset($tubeMap[$tube])) {
-                    $doc = substr($tube, strlen($logpre));
+                    $doc = substr($esdoc, strlen($logpre));
                     $docYm = sprintf("%s_%s", $doc, date('Y_m'));
                     $result = EsClient::instance($docYm)->getMap();
                     //没有取到文档结构，有可能是其他业务的日志，不做处理
@@ -117,7 +119,7 @@ class Flume extends Core {
                         $mailsDiff[$diffKey] = ['ctime' => 0, 'logkey' => $tube, 'body' => $body];
                     }
                     $ids[] = $job['id'];
-                    $logs[] = ["headers" => ["topic" => $tube], "body" => $job["body"]];
+                    $logs[] = ["headers" => ["topic" => $esdoc], "body" => $job["body"]];
                     $count++;
                     $total++;
                 }
@@ -149,6 +151,7 @@ class Flume extends Core {
         $prefix = $prefix ? trim($prefix) : $logpre;
         if(!$prefix) throw new \Exception("the log prefix is not allow empty!");
         list($logLock, $logError, $logFile, $logTmp, $logCorrect) = $this->_formatLogFile($prefix);
+        $mqDocMap = Cfg::instance()->get('mq_esdoc');   //mq 与 es文档的映射
 
         //初始化时，校验是否未完成，重新修正
         if(file_exists($logTmp)) {
@@ -213,9 +216,10 @@ class Flume extends Core {
                 if(!$line) continue;
                 $lArr = explode("\t", $line, 3);
                 if(count($lArr) < 3) { $logsError[] = $line; $countError++; continue; }
+                $esdoc = isset($mqDocMap[$logkey]) ? $mqDocMap[$logkey] : $logkey;
                 $logkey = $lArr[1];
                 if(!isset($logkeys[$logkey])) {
-                    $doc = substr($logkey, strlen($logpre));
+                    $doc = substr($esdoc, strlen($logpre));
                     $docYm = sprintf("%s_%s", $doc, date('Y_m'));
                     $result = EsClient::instance($doc)->getMap();
                     $resultYm = EsClient::instance($docYm)->getMap();
@@ -243,7 +247,7 @@ class Flume extends Core {
                     if(isset($mailsDiff[$diffKey])) continue;
                     $mailsDiff[$diffKey] = ['ctime' => 0, 'logkey' => $logkey, 'body' => $body];
                 } else {
-                    $logs[] = ["headers" => ["topic" => $logkey], "body" => $lArr[2]];
+                    $logs[] = ["headers" => ["topic" => $esdoc], "body" => $lArr[2]];
                     $count++;
                 }
             }

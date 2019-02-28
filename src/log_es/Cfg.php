@@ -24,6 +24,7 @@ class Cfg extends Core {
                 'mails' => [],
                 'interval' => 300,
             ],
+            'mq_esdoc' => [],
         ];
     }
 
@@ -72,6 +73,10 @@ class Cfg extends Core {
 
     public function setLogpre($logpre) {
         $this->_cfg['logpre'] = $logpre ? $logpre : $this->_cfg['logpre'];
+    }
+
+    public function setMqEsdoc($mqEsdoc) {
+        $this->_cfg['mq_esdoc'] = $mqEsdoc ? $mqEsdoc : $this->_cfg['mq_esdoc'];
     }
 
     public function get($key) {

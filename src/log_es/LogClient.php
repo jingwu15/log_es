@@ -51,68 +51,6 @@ class LogClient extends Core {
         return self::$instances[$logkey];
     }
 
-    public function add($row) {
-        $now = date("Y-m-d H:i:s");
-        if($this->_useEs) {
-            $body = json_encode($row, JSON_UNESCAPED_UNICODE);
-            $result = LogQueue::instance('client')->usePut($this->_logfkey, $body);
-            if(!$result) file_put_contents($this->_queueFile, "{$now}\t{$this->_logfkey}\t{$body}\n", FILE_APPEND);
-        }
-        if($this->_useFile) {
-            $body = json_encode($row, JSON_UNESCAPED_UNICODE);
-            file_put_contents($this->_logfile, "{$now}\t{$this->_logfkey}\t{$body}\n", FILE_APPEND);
-        }
-        if($this->_useStdout) {
-            $body = json_encode($row, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-            print_r("{$now}\t{$this->_logfkey}\t{$body}\n");
-        }
-        return $result;
-    }
-
-    public function setLevel($level = Logger::DEBUG) {
-        $this->_level = $level;
-        $this->resetLogger();
-        return $this;
-    }
-
-    public function useFile($flag = false) {
-        $this->_useFile = $flag ? true : false;
-        $this->resetLogger();
-        return $this;
-    }
-
-    public function useStdout($flag = false) {
-        $this->_useStdout = $flag ? true : false;
-        $this->resetLogger();
-        return $this;
-    }
-
-    public function useEs($flag = true) {
-        $this->_useEs = $flag ? true : false;
-        $this->resetLogger();
-        return $this;
-    }
-
-    public function debug($msg) {
-        $this->logger()->debug($msg);
-    }
-
-    public function info($msg) {
-        $this->logger()->info($msg);
-    }
-
-    public function notice($msg) {
-        $this->logger()->notice($msg);
-    }
-
-    public function warn($msg) {
-        $this->logger()->warn($msg);
-    }
-
-    public function error($msg) {
-        $this->logger()->error($msg);
-    }
-
     public function resetLogger() {
         unset(self::$loggers[$this->_logkey]);
         $this->logger();
@@ -155,6 +93,85 @@ class LogClient extends Core {
         $esHandler = new EsHandler($logkey, $level);
         $esHandler->setFormatter(new LineFormatter("[%datetime%] %channel%.%level_name%: %message% %context% %extra% \n", '', true));
         $logger->pushHandler($esHandler);
+    }
+
+    public function setLevel($level = Logger::DEBUG) {
+        $this->_level = $level;
+        $this->resetLogger();
+        return $this;
+    }
+
+    public function useFile($flag = false) {
+        $this->_useFile = $flag ? true : false;
+        $this->resetLogger();
+        return $this;
+    }
+
+    public function useStdout($flag = false) {
+        $this->_useStdout = $flag ? true : false;
+        $this->resetLogger();
+        return $this;
+    }
+
+    public function useEs($flag = true) {
+        $this->_useEs = $flag ? true : false;
+        $this->resetLogger();
+        return $this;
+    }
+
+    public function add($row) {
+        $now = date("Y-m-d H:i:s");
+        if($this->_useEs) {
+            $body = json_encode($row, JSON_UNESCAPED_UNICODE);
+            $result = LogQueue::instance('client')->usePut($this->_logfkey, $body);
+            if(!$result) file_put_contents($this->_queueFile, "{$now}\t{$this->_logfkey}\t{$body}\n", FILE_APPEND);
+        }
+        if($this->_useFile) {
+            $body = json_encode($row, JSON_UNESCAPED_UNICODE);
+            file_put_contents($this->_logfile, "{$now}\t{$this->_logfkey}\t{$body}\n", FILE_APPEND);
+        }
+        if($this->_useStdout) {
+            $body = json_encode($row, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            print_r("{$now}\t{$this->_logfkey}\t{$body}\n");
+        }
+        return $result;
+    }
+
+    public function emergency($message, array $context = array()) {
+        $this->logger()->emergency($message, $context);
+    }
+    public function emerg($message, array $context = array()) {
+        $this->logger()->emerg($message, $context);
+    }
+    public function alert($message, array $context = array()) {
+        $this->logger()->alert($message, $context);
+    }
+    public function critical($message, array $context = array()) {
+        $this->logger()->critical($message, $context);
+    }
+    public function crit($message, array $context = array()) {
+        $this->logger()->crit($message, $context);
+    }
+    public function error($message, array $context = array()) {
+        $this->logger()->error($message, $context);
+    }
+    public function err($message, array $context = array()) {
+        $this->logger()->err($message, $context);
+    }
+    public function warning($message, array $context = array()) {
+        $this->logger()->warning($message, $context);
+    }
+    public function warn($message, array $context = array()) {
+        $this->logger()->warn($message, $context);
+    }
+    public function notice($message, array $context = array()) {
+        $this->logger()->notice($message, $context);
+    }
+    public function info($message, array $context = array()) {
+        $this->logger()->info($message, $context);
+    }
+    public function debug($message, array $context = array()) {
+        $this->logger()->debug($message, $context);
     }
 
 }
