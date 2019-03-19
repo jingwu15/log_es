@@ -85,7 +85,7 @@ class Flume extends Core {
                         if(!isset($mailsNoDoc[$tube])) $mailsNoDoc[$tube] = 0;
                         continue;
                     }
-                    $tubeMap = $result['data'][$tube]["properties"];
+                    $tubeMap = $result['data'][$esdoc]["properties"];
                     $tubeKeys = array_keys($tubeMap);
                 }
 
@@ -226,11 +226,11 @@ class Flume extends Core {
                     //没有取到文档结构，有可能是其他业务的日志，不做处理
                     if($result['code']) {
                         //var_dump(date("Y-m-d H:i:s")."\t{$doc}\t".json_encode($result, JSON_UNESCAPED_UNICODE));
-                        $logkeys[$logkey] = array_keys($result['data'][$logkey]["properties"]);
+                        $logkeys[$logkey] = array_keys($result['data'][$esdoc]["properties"]);
                     }
                     if($resultYm['code']) {
                         //var_dump(date("Y-m-d H:i:s")."\t{$docYm}\t".json_encode($resultYm, JSON_UNESCAPED_UNICODE));
-                        $logkeys[$logkey] = array_keys($resultYm['data'][$logkey]["properties"]);
+                        $logkeys[$logkey] = array_keys($resultYm['data'][$esdoc]["properties"]);
                     }
                     $logkeys[$logkey] = isset($logkeys[$logkey]) ? $logkeys[$logkey] : [];
                 }
