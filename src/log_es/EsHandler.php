@@ -21,14 +21,15 @@ class EsHandler extends AbstractProcessingHandler {
     }
 
     protected function write(array $record) {
+        $logkey = Cfg::instance()->get('logpre').$this->_logkey;
         $row = $record;
         $row["create_at"] = $row["datetime"]->format('Y-m-d H:i:s');
         $row["timezone"]  = $row["datetime"]->getTimezone()->getName();
         unset($row['datetime']);
         $body = json_encode($row, JSON_UNESCAPED_UNICODE);
-        $result = LogQueue::instance('client')->usePut($this->_logkey, $body);
+        $result = LogQueue::instance('client')->usePut($logkey, $body);
         if(!$result) 
-            file_put_contents($this->_queueFile, date("Y-m-d H:i:s")."\t{$this->_logkey}\t{$body}\n", FILE_APPEND);
+            file_put_contents($this->_queueFile, date("Y-m-d H:i:s")."\t{$logkey}\t{$body}\n", FILE_APPEND);
     }
 
     public function setFormatter(FormatterInterface $formatter) {
