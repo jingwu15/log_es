@@ -77,9 +77,8 @@ class Flume extends Core {
                 $esdoc = isset($mqDocMap[$tube]) ? $mqDocMap[$tube] : $tube;
                 $tubeMap = $tubeKeys = [];
                 if(!isset($tubeMap[$tube])) {
-                    $doc = substr($esdoc, strlen($logpre));
-                    $docYm = sprintf("%s_%s", $doc, date('Y_m'));
-                    $result = EsClient::instance($docYm)->getMap();
+                    $esdocYm = sprintf("%s_%s", $esdoc, date('Y_m'));
+                    $result = EsClient::instance($esdocYm)->getMap();
                     //没有取到文档结构，有可能是其他业务的日志，不做处理
                     if(!$result['code']) {
                         if(!isset($mailsNoDoc[$tube])) $mailsNoDoc[$tube] = 0;
@@ -219,17 +218,16 @@ class Flume extends Core {
                 $esdoc = isset($mqDocMap[$logkey]) ? $mqDocMap[$logkey] : $logkey;
                 $logkey = $lArr[1];
                 if(!isset($logkeys[$logkey])) {
-                    $doc = substr($esdoc, strlen($logpre));
-                    $docYm = sprintf("%s_%s", $doc, date('Y_m'));
-                    $result = EsClient::instance($doc)->getMap();
-                    $resultYm = EsClient::instance($docYm)->getMap();
+                    $esdocYm = sprintf("%s_%s", $esdoc, date('Y_m'));
+                    $result = EsClient::instance($esdoc)->getMap();
+                    $resultYm = EsClient::instance($esdocYm)->getMap();
                     //没有取到文档结构，有可能是其他业务的日志，不做处理
                     if($result['code']) {
-                        //var_dump(date("Y-m-d H:i:s")."\t{$doc}\t".json_encode($result, JSON_UNESCAPED_UNICODE));
+                        //var_dump(date("Y-m-d H:i:s")."\t{$esdoc}\t".json_encode($result, JSON_UNESCAPED_UNICODE));
                         $logkeys[$logkey] = array_keys($result['data'][$esdoc]["properties"]);
                     }
                     if($resultYm['code']) {
-                        //var_dump(date("Y-m-d H:i:s")."\t{$docYm}\t".json_encode($resultYm, JSON_UNESCAPED_UNICODE));
+                        //var_dump(date("Y-m-d H:i:s")."\t{$esdocYm}\t".json_encode($resultYm, JSON_UNESCAPED_UNICODE));
                         $logkeys[$logkey] = array_keys($resultYm['data'][$esdoc]["properties"]);
                     }
                     $logkeys[$logkey] = isset($logkeys[$logkey]) ? $logkeys[$logkey] : [];

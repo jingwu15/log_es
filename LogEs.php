@@ -1,15 +1,15 @@
 <?php
 
-namespace LogEs;
+namespace Service\LogEs;
 
 use \Jingwu\LogEs\Cfg;
 use \Jingwu\LogEs\Flume;
 use \Jingwu\LogEs\LogQueue;
+use Psr\Log\LoggerInterface;
 use \Jingwu\LogEs\LogClient;
-use \Jingwu\LogEs\EsClient;
 use Ypf\Lib\Config as YpfCfg;
 
-class LogEs {
+class LogEs implements LoggerInterface {
 
     const DEBUG    = 100;        //Logger::DEBUG        LogClient::DEBUG
     const INFO     = 200;        //Logger::INFO         LogClient::INFO
@@ -18,12 +18,17 @@ class LogEs {
     const ERROR    = 400;        //Logger::ERROR        LogClient::ERROR
     const CRITICAL = 500;        //Logger::CRITICAL     LogClient::CRITICAL
 
-    private $_logkey = 'default';
-    static public $instances = [];
-    static public $initCfg = false;
+    private $_logkey            = 'default';
+    private $_logkeyFull        = 'log_default';
+    private $_syskey            = '';
+    static public $instances    = [];
+    static public $initCfg      = false;
 
     public function __construct($logkey = 'default') {
-        $this->_logkey = $logkey;
+        if(defined('SYS_KEY')) $this->_syskey = SYS_KEY;
+        $this->_logkey = defined('SYS_KEY') ? SYS_KEY.'-'.$logkey : $logkey;
+        //全 logkey
+        $this->_logkeyFull = Cfg::instance()->get('logpre').$this->_logkey;
     }
 
     static public function ins($logkey = 'default') {
@@ -52,13 +57,26 @@ class LogEs {
                 $mails = explode(",", $cfg['mail']['mails']);
                 foreach($mails as &$mail) $mail = trim($mail);
             }
+            $mqEsdoc = [];
+            $cfgEsdocMqMap = isset($cfg['esdoc_mq_map']) ? $cfg['esdoc_mq_map'] : [];
+            foreach($cfgEsdocMqMap as $esdoc => $line) {
+                if(!$line) continue;
+                $rows = explode(',', $line);
+                foreach($rows as $mq) {
+                    $mqEsdoc[$logpre.trim($mq)] = $esdoc;
+                }
+            }
+            $limitWrite = isset($cfg['limit']) && isset($cfg['limit']['limit_write']) ? intval($cfg['limit']['limit_write']) : 5000;
+
             if($bsHost && $bsPort) Cfg::instance()->setBeanstalk($bsHost, $bsPort);
-            if($esApis)    Cfg::instance()->setEs($esApis);
-            if($mails)     Cfg::instance()->setMails($mails);
-            if($logdir)    Cfg::instance()->setLogdir($logdir);
-            if($logpre)    Cfg::instance()->setLogpre($logpre);
-            if($flumeApis) Cfg::instance()->setFlume($flumeApis);
+            if($esApis)       Cfg::instance()->setEs($esApis);
+            if($mails)        Cfg::instance()->setMails($mails);
+            if($logdir)       Cfg::instance()->setLogdir($logdir);
+            if($logpre)       Cfg::instance()->setLogpre($logpre);
+            if($flumeApis)    Cfg::instance()->setFlume($flumeApis);
             if($mailInterval) Cfg::instance()->setMailInterval($mailInterval);
+            if($limitWrite)   Cfg::instance()->setLimitWrite($limitWrite);
+            if($mqEsdoc)      Cfg::instance()->setMqEsdoc($mqEsdoc);
             self::$initCfg = true;
         }
         return true;
@@ -75,73 +93,53 @@ class LogEs {
     }
 
     public function setLevel($level = self::DEBUG) {
-        LogClient::instance($this->_logkey)->setLevel($level);
+        LogClient::instance($this->_logkeyFull)->setLevel($level);
         return $this;
     }
     public function useStdout($flag = false) {
-        LogClient::instance($this->_logkey)->useStdout($flag);
+        LogClient::instance($this->_logkeyFull)->useStdout($flag);
         return $this;
     }
     public function useFile($flag = false) {
-        LogClient::instance($this->_logkey)->useFile($flag);
+        LogClient::instance($this->_logkeyFull)->useFile($flag);
         return $this;
     }
     public function useEs($flag = true) {
-        LogClient::instance($this->_logkey)->useEs($flag);
+        LogClient::instance($this->_logkeyFull)->useEs($flag);
         return $this;
     }
 
     public function add($data) {
-        return LogClient::instance($this->_logkey)->add($data);
+        return LogClient::instance($this->_logkeyFull)->add($data);
+    }
+    public function emergency($message, array $context = array()) {
+    }
+    public function emerg($message, array $context = array()) {
+    }
+    public function alert($message, array $context = array()) {
+    }
+    public function critical($message, array $context = array()) {
+    }
+    public function error($message, array $context = array()) {
+        LogClient::instance($this->_logkeyFull)->error($message);
+    }
+    public function warning($message, array $context = array()) {
+        LogClient::instance($this->_logkeyFull)->warn($message);
+    }
+    public function warn($message, array $context = array()) {
+        LogClient::instance($this->_logkeyFull)->warn($message);
+    }
+    public function notice($message, array $context = array()) {
+        LogClient::instance($this->_logkeyFull)->notice($message);
+    }
+    public function info($message, array $context = array()) {
+        LogClient::instance($this->_logkeyFull)->info($message);
+    }
+    public function debug($message, array $context = array()) {
+        LogClient::instance($this->_logkeyFull)->debug($message);
+    }
+    public function log($level, $message, array $context = array()) {
     }
 
-    public function debug($msg) {
-        LogClient::instance($this->_logkey)->debug($msg);
-    }
-
-    public function warn($msg) {
-        LogClient::instance($this->_logkey)->warn($msg);
-    }
-
-    public function info($msg) {
-        LogClient::instance($this->_logkey)->info($msg);
-    }
-
-    public function notice($msg) {
-        LogClient::instance($this->_logkey)->notice($msg);
-    }
-
-    public function error($msg) {
-        LogClient::instance($this->_logkey)->error($msg);
-    }
-
-    public function esGetMap() {
-        return EsClient::instance($this->_logkey)->getMap();
-    }
-
-    public function esGet($where) {
-        return EsClient::instance($this->_logkey)->get($where);
-    }
-
-    public function esGetsPage($where, $page, $pagesize, $sorts = null) {
-        return EsClient::instance($this->_logkey)->getsPage($where, $page, $pagesize, $sorts);
-    }
-
-    public function esGetsAll($where, $sorts = null) {
-        return EsClient::instance($this->_logkey)->getsAll($where, $sorts);
-    }
-
-    public function esCount($where) {
-        return EsClient::instance($this->_logkey)->count($where);
-    }
-
-    public function esCall($func, $params) {
-        return EsClient::instance($this->_logkey)->$func($params);
-    }
 }
 
-/*
- *
- *
- *
- */

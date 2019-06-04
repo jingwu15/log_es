@@ -23,8 +23,7 @@ class LogClient extends Core {
     const ERROR    = 400;        //Logger::ERROR
     const CRITICAL = 500;        //Logger::CRITICAL
 
-    protected $_logkey       = '';      //无logpre的logkey
-    protected $_logfkey      = '';      //有logpre的logkey
+    protected $_logkey       = '';
     protected $_logfile      = '';
     protected $_level        = Logger::DEBUG;
     protected $_useEs        = true;
@@ -37,10 +36,8 @@ class LogClient extends Core {
     public function __construct($logkey) {
         $this->_logkey = $logkey;
         $logdir = Cfg::instance()->get('logdir');
-        $logpre = Cfg::instance()->get('logpre');
-        $this->_logfkey = "{$logpre}{$logkey}";
         $this->_queueFile = "{$logdir}/log_queue.log";
-        $this->_logfile = "{$logdir}/{$logpre}{$logkey}.log";
+        $this->_logfile = "{$logdir}/{$logkey}.log";
     }
 
     static public function instance($logkey = 'default') {
@@ -123,16 +120,16 @@ class LogClient extends Core {
         $now = date("Y-m-d H:i:s");
         if($this->_useEs) {
             $body = json_encode($row, JSON_UNESCAPED_UNICODE);
-            $result = LogQueue::instance('client')->usePut($this->_logfkey, $body);
-            if(!$result) file_put_contents($this->_queueFile, "{$now}\t{$this->_logfkey}\t{$body}\n", FILE_APPEND);
+            $result = LogQueue::instance('client')->usePut($this->_logkey, $body);
+            if(!$result) file_put_contents($this->_queueFile, "{$now}\t{$this->_logkey}\t{$body}\n", FILE_APPEND);
         }
         if($this->_useFile) {
             $body = json_encode($row, JSON_UNESCAPED_UNICODE);
-            file_put_contents($this->_logfile, "{$now}\t{$this->_logfkey}\t{$body}\n", FILE_APPEND);
+            file_put_contents($this->_logfile, "{$now}\t{$this->_logkey}\t{$body}\n", FILE_APPEND);
         }
         if($this->_useStdout) {
             $body = json_encode($row, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-            print_r("{$now}\t{$this->_logfkey}\t{$body}\n");
+            print_r("{$now}\t{$this->_logkey}\t{$body}\n");
         }
         return $result;
     }

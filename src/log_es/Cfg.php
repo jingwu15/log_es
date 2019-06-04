@@ -110,7 +110,7 @@ class Cfg extends Core {
         if(!$this->_cfg['beanstalk']) return ['code' => 0, "error" => "beanstalk noset"];
         if(!$this->_cfg['flume'])     return ['code' => 0, "error" => "flume noset"    ];
         if(!$this->_cfg['es'])        return ['code' => 0, "error" => "es noset"       ];
-        if(!$this->_cfg['mails'])     return ['code' => 0, "error" => "mail noset"     ];
+        if(!$this->_cfg['mail'])     return ['code' => 0, "error" => "mail noset"     ];
 
         $cfgBs = $this->_cfg['beanstalk'];
         if(!$cfgBs['host'] || !$cfgBs['port']) return ['code' => 0, "error" => "beanstalk set error"];
