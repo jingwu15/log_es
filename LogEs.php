@@ -18,17 +18,14 @@ class LogEs implements LoggerInterface {
     const ERROR    = 400;        //Logger::ERROR        LogClient::ERROR
     const CRITICAL = 500;        //Logger::CRITICAL     LogClient::CRITICAL
 
-    private $_logkey            = 'default';
-    private $_logkeyFull        = 'log_default';
-    private $_syskey            = '';
-    static public $instances    = [];
-    static public $initCfg      = false;
+    private $_logkey = 'default';
+    private $_syskey = '';
+    static public $instances = [];
+    static public $initCfg = false;
 
     public function __construct($logkey = 'default') {
         if(defined('SYS_KEY')) $this->_syskey = SYS_KEY;
         $this->_logkey = defined('SYS_KEY') ? SYS_KEY.'-'.$logkey : $logkey;
-        //全 logkey
-        $this->_logkeyFull = Cfg::instance()->get('logpre').$this->_logkey;
     }
 
     static public function ins($logkey = 'default') {
@@ -93,24 +90,24 @@ class LogEs implements LoggerInterface {
     }
 
     public function setLevel($level = self::DEBUG) {
-        LogClient::instance($this->_logkeyFull)->setLevel($level);
+        LogClient::instance($this->_logkey)->setLevel($level);
         return $this;
     }
     public function useStdout($flag = false) {
-        LogClient::instance($this->_logkeyFull)->useStdout($flag);
+        LogClient::instance($this->_logkey)->useStdout($flag);
         return $this;
     }
     public function useFile($flag = false) {
-        LogClient::instance($this->_logkeyFull)->useFile($flag);
+        LogClient::instance($this->_logkey)->useFile($flag);
         return $this;
     }
     public function useEs($flag = true) {
-        LogClient::instance($this->_logkeyFull)->useEs($flag);
+        LogClient::instance($this->_logkey)->useEs($flag);
         return $this;
     }
 
     public function add($data) {
-        return LogClient::instance($this->_logkeyFull)->add($data);
+        return LogClient::instance($this->_logkey)->add($data);
     }
     public function emergency($message, array $context = array()) {
     }
@@ -121,22 +118,22 @@ class LogEs implements LoggerInterface {
     public function critical($message, array $context = array()) {
     }
     public function error($message, array $context = array()) {
-        LogClient::instance($this->_logkeyFull)->error($message);
+        LogClient::instance($this->_logkey)->error($message);
     }
     public function warning($message, array $context = array()) {
-        LogClient::instance($this->_logkeyFull)->warn($message);
+        LogClient::instance($this->_logkey)->warn($message);
     }
     public function warn($message, array $context = array()) {
-        LogClient::instance($this->_logkeyFull)->warn($message);
+        LogClient::instance($this->_logkey)->warn($message);
     }
     public function notice($message, array $context = array()) {
-        LogClient::instance($this->_logkeyFull)->notice($message);
+        LogClient::instance($this->_logkey)->notice($message);
     }
     public function info($message, array $context = array()) {
-        LogClient::instance($this->_logkeyFull)->info($message);
+        LogClient::instance($this->_logkey)->info($message);
     }
     public function debug($message, array $context = array()) {
-        LogClient::instance($this->_logkeyFull)->debug($message);
+        LogClient::instance($this->_logkey)->debug($message);
     }
     public function log($level, $message, array $context = array()) {
     }
