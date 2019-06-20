@@ -27,7 +27,8 @@ class Flume extends Core {
                 if(in_array($id, $ids)) continue;
                 break;
             }
-            $result = Curl::instance('flume')->post($this->_apis[$id], $json);
+            //Expect: 是为了处理continue问题
+            $result = Curl::instance('flume')->post($this->_apis[$id], $json, ['Expect:']);
             if(isset($result['code']) && $result['code'] == 200) break;
             $ids[] = $id;
         }
