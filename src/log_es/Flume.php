@@ -216,8 +216,8 @@ class Flume extends Core {
                 if(!$line) continue;
                 $lArr = explode("\t", $line, 3);
                 if(count($lArr) < 3) { $logsError[] = $line; $countError++; continue; }
-                $esdoc = isset($mqDocMap[$logkey]) ? $mqDocMap[$logkey] : $logkey;
                 $logkey = $lArr[1];
+                $esdoc = isset($mqDocMap[$logkey]) ? $mqDocMap[$logkey] : $logkey;
                 if(!isset($logkeys[$logkey])) {
                     $esdocYm = sprintf("%s_%s", $esdoc, date('Y_m'));
                     $result = EsClient::instance($esdoc)->getMap();

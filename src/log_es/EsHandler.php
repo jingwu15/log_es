@@ -17,7 +17,8 @@ class EsHandler extends AbstractProcessingHandler {
         $this->_logkey = $logkey;
 
         $logdir = Cfg::instance()->get('logdir');
-        $this->_queueFile = "{$logdir}/log_queue.log";
+        $logpre = Cfg::instance()->get('logpre');
+        $this->_queueFile = "{$logdir}/logauto_{$logpre}.log";
     }
 
     protected function write(array $record) {
@@ -28,8 +29,18 @@ class EsHandler extends AbstractProcessingHandler {
         unset($row['datetime']);
         $body = json_encode($row, JSON_UNESCAPED_UNICODE);
         $result = LogQueue::instance('client')->usePut($logkey, $body);
-        if(!$result) 
-            file_put_contents($this->_queueFile, date("Y-m-d H:i:s")."\t{$logkey}\t{$body}\n", FILE_APPEND);
+        $flag = 1;
+        if(!$result) {
+            $result = LogQueue::instance('client')->reconnect();
+            if($result) {
+                $result = LogQueue::instance('client')->usePut($logkey, $body);
+                if(!$result) $flag = 0;
+            } else {
+                $flag = 0;
+            }
+        }
+        //执行失败, 写入文件
+        if($flag === 0) file_put_contents($this->_queueFile, date("Y-m-d H:i:s")."\t{$logkey}\t{$body}\n", FILE_APPEND);
     }
 
     public function setFormatter(FormatterInterface $formatter) {
