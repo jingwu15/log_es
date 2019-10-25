@@ -78,15 +78,21 @@ class Flume extends Core {
                 $esdoc = isset($mqDocMap[$tube]) ? $mqDocMap[$tube] : $tube;
                 $tubeMap = $tubeKeys = [];
                 if(!isset($tubeMap[$tube])) {
-                    $esdocYm = sprintf("%s_%s", $esdoc, date('Y_m'));
-                    $result = EsClient::instance($esdocYm)->getMap();
+                    $esdocItems = [
+                        sprintf("%s_%s", $esdoc, date('Y_m')),
+                        sprintf("%s_%s", $esdoc, date('Y')),
+                    ];
                     //没有取到文档结构，有可能是其他业务的日志，不做处理
-                    if(!$result['code']) {
-                        if(!isset($mailsNoDoc[$tube])) $mailsNoDoc[$tube] = 0;
-                        continue;
+                    $mailsNoDoc[$tube] = 0;
+                    foreach($esdocItems as $esdocItem) {
+                        $result = EsClient::instance($esdocItem)->getMap();
+                        if($result['code']) {
+                            $tubeMap = $result['data'][$esdoc]["properties"];
+                            $tubeKeys = array_keys($tubeMap);
+                            unset($mailsNoDoc[$tube]);
+                            break;
+                        }
                     }
-                    $tubeMap = $result['data'][$esdoc]["properties"];
-                    $tubeKeys = array_keys($tubeMap);
                 }
 
                 $stats = $log->statsTube($tube);
@@ -105,6 +111,10 @@ class Flume extends Core {
                         $idsError[] = $job['id'];
                         $logsError[] = sprintf("%s\t%s\t%s\n", date('Y-m-d H:i:s'), $tube, $job['body']);
                         continue;
+                    }
+                    if(strlen($job['body']) > (1024 * 1024)) {        //消息体超长
+                        $idsError[] = $job['id'];
+                        $logsError[] = sprintf("%s\t%s\t%s\n", date('Y-m-d H:i:s'), $tube, $job['body']);
                     }
                     $keys = array_keys($jdata);
                     $diff = array_diff($keys, $tubeKeys);
@@ -219,23 +229,25 @@ class Flume extends Core {
                 $logkey = $lArr[1];
                 $esdoc = isset($mqDocMap[$logkey]) ? $mqDocMap[$logkey] : $logkey;
                 if(!isset($logkeys[$logkey])) {
-                    $esdocYm = sprintf("%s_%s", $esdoc, date('Y_m'));
-                    $result = EsClient::instance($esdoc)->getMap();
-                    $resultYm = EsClient::instance($esdocYm)->getMap();
-                    //没有取到文档结构，有可能是其他业务的日志，不做处理
-                    if($result['code']) {
-                        //var_dump(date("Y-m-d H:i:s")."\t{$esdoc}\t".json_encode($result, JSON_UNESCAPED_UNICODE));
-                        $logkeys[$logkey] = array_keys($result['data'][$esdoc]["properties"]);
-                    }
-                    if($resultYm['code']) {
-                        //var_dump(date("Y-m-d H:i:s")."\t{$esdocYm}\t".json_encode($resultYm, JSON_UNESCAPED_UNICODE));
-                        $logkeys[$logkey] = array_keys($resultYm['data'][$esdoc]["properties"]);
-                    }
+                    $esdocItems = [
+                        sprintf("%s_%s", $esdoc, date('Y_m')),
+                        $esdoc,
+                        sprintf("%s_%s", $esdoc, date('Y')),
+                    ];
                     $logkeys[$logkey] = isset($logkeys[$logkey]) ? $logkeys[$logkey] : [];
+                    foreach($esdocItems as $esdocItem) {
+                        $result = EsClient::instance($esdocItem)->getMap();
+                        if($result['code']) {
+                            $logkeys[$logkey] = array_keys($result['data'][$esdoc]["properties"]);
+                            break;
+                        }
+                    }
                 }
                 $jdata = json_decode($lArr[2], 1);
                 //不能正确的解析json, 则格式不正确，丢弃
                 if(!$jdata) { $logsError[] = $line; $countError++; continue; }
+                //消息超长
+                if(strlen($lArr[2]) > (1024*1024)) { $logsError[] = $line; $countError++; continue; }
                 $diff = array_diff(array_keys($jdata), $logkeys[$logkey]);
                 if($logkeys[$logkey] && $diff) {
                     $logsCorrect[] = $line;
