@@ -89,7 +89,7 @@ class Cfg extends Core {
     }
 
     public function setBodySizeMax($bodySizeMax = 0) {
-        $this->_cfg['limit']['body_size_max'] = $bodySizeMax <= self::$bodySizeMin ? self::$bodySizeMax : $bodySizeMax
+        $this->_cfg['limit']['body_size_max'] = $bodySizeMax <= self::$bodySizeMin ? self::$bodySizeMax : $bodySizeMax;
     }
 
     public function get($key) {
