@@ -19,7 +19,7 @@ class Flume extends Core {
 
     public function post($data = []) {
         $json = is_string($data) ? $data : json_encode($data, JSON_UNESCAPED_UNICODE);
-        $result = $ids  = [];
+        $result = $ids  = $usedApis = [];
         $j = 0;
         for($i = 0; $i < 3; $i++) {
             while($j++ < 50) {
@@ -27,12 +27,13 @@ class Flume extends Core {
                 if(in_array($id, $ids)) continue;
                 break;
             }
+            $usedApis[] = $this->_apis[$id];
             //Expect: 是为了处理continue问题
             $result = Curl::instance('flume')->post($this->_apis[$id], $json, ['Expect:']);
             if(isset($result['code']) && $result['code'] == 200) break;
             $ids[] = $id;
         }
-        return $result;
+        return array_merge($result, ['used_apis' => $usedApis]);
     }
 
     public function _formatLogFile($prefix) {
@@ -134,8 +135,15 @@ class Flume extends Core {
                     $total++;
                 }
             }
-            $this->post($logs);
-            $ids = array_merge($ids, $idsCorrect, $idsError);
+
+            //请求异常, 正常消息不做处理(不删除，即自动恢复到正常的状态)， 异常消息删除队列任务
+            $resp = $this->post($logs);
+            if($resp['code'] == 200) {
+                $ids = array_merge($ids, $idsCorrect, $idsError);
+            } else {
+                $ids = array_merge($idsCorrect, $idsError);
+                $this->mailReqEsFail(implode(', ', $resp['used_apis']));
+            }
             foreach($ids as $id) $log->delete($id);
             //邮件
             foreach($mailsNoDoc as $logkey => &$ctime) {
@@ -316,6 +324,11 @@ class Flume extends Core {
         flock($fp, LOCK_UN);
         fclose($fp);
         return $data;
+    }
+
+    public function mailReqEsFail($apis) {
+        $body = "请求ES接口[{$apis}]失败！";
+        $this->sendmail($logkey, $body);
     }
 
     public function mailLackField($logkey, $fieldStr) {

@@ -79,8 +79,15 @@ class Curl extends Core {
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
         $response = curl_exec($curl);
+        $error = curl_error($curl);
         curl_close($curl);
-        return self::parseResponse($response);
+
+        $resp = ['version' => 'HTTP/1.1', 'code' => 0, 'code_title' => '', 'headers' => [], 'body' => '', 'error' => $error];
+        if($response) {
+            return array_merge($resp, self::parseResponse($response));
+        } else {
+            return $resp;
+        }
     }
 
     public function head($url, $data = []) {

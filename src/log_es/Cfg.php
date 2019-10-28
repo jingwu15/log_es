@@ -5,6 +5,7 @@ class Cfg extends Core {
 
     private $_cfg = null;
     static public $instances = [];
+    static public $bodySizeMin = 64 * 1024;
 
     public function __construct() {
         //初始化
@@ -22,6 +23,7 @@ class Cfg extends Core {
             'logpre' => 'log_',
             'limit' => [
                 'limit_write' => 50000,
+                'body_size_max' => self::$bodySizeMin,
             ],
             'mail'  => [
                 'mails' => [],
@@ -84,6 +86,10 @@ class Cfg extends Core {
 
     public function setLimitWrite($limitWrite = 50000) {
         $this->_cfg['limit']['limit_write'] = $limitWrite ? $limitWrite : $this->_cfg['limit']['limit_write'];
+    }
+
+    public function setBodySizeMax($bodySizeMax = 0) {
+        $this->_cfg['limit']['body_size_max'] = $bodySizeMax <= self::$bodySizeMin ? self::$bodySizeMax : $bodySizeMax
     }
 
     public function get($key) {
