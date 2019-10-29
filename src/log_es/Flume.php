@@ -334,23 +334,25 @@ class Flume extends Core {
     }
 
     public function mailReqEsFail($apis) {
-        $body = "请求ES接口[{$apis}]失败！";
-        $this->sendmail($logkey, $body);
+        $subject = "LogEs Flume接口异常";
+        $body = "请求Flume接口[{$apis}]失败！";
+        $this->sendmail($subject, $body);
     }
 
     public function mailLackField($logkey, $fieldStr) {
+        $subject = "LogEs日志结构变更[{$logkey}]";
         $body = "日志[{$logkey}]结构有变更，缺少字段: {$fieldStr}，请及时更新ES结构! ";
-        $this->sendmail($logkey, $body);
+        $this->sendmail($subject, $body);
     }
 
     public function mailNoDoc($logkey) {
+        $subject = "LogEs日志结构变更[{$logkey}]";
         $body = "ES中，文档{$logkey}不存在，请及时更新ES结构! ";
-        $this->sendmail($logkey, $body);
+        $this->sendmail($subject, $body);
     }
 
-    public function sendmail($logkey, $body) {
+    public function sendmail($subject, $body) {
         $mails = Cfg::instance()->get('mail.mails');
-        $subject = "日志结构变更[{$logkey}]";
 $html = <<<EOF
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
