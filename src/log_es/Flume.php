@@ -88,7 +88,14 @@ class Flume extends Core {
                     foreach($esdocItems as $esdocItem) {
                         $result = EsClient::instance($esdocItem)->getMap();
                         if($result['code']) {
-                            $tubeMap = $result['data'][$esdoc]["properties"];
+                            //log_type应该只有一个，且名字与esdoc保持一致
+                            //因admin_log旧业务有问题，log_type与esdoc不一致，故更改实现方式
+                            //$tubeMap = $result['data'][$esdoc]["properties"];
+                            //$tubeMap = $result['data'][$esdoc]["properties"];
+
+                            //取第一个，忽略有多个log_type的问题
+                            $first = current($result['data']);
+                            $tubeMap = $first["properties"];
                             $tubeKeys = array_keys($tubeMap);
                             unset($mailsNoDoc[$tube]);
                             break;
