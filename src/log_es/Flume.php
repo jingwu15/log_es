@@ -93,7 +93,7 @@ class Flume extends Core {
                             $first = current($result['data']);
                             $tubeMap = $first["properties"];
                             $tubeKeys = array_keys($tubeMap);
-                            $flagNoDoc = true;
+                            $flagInEs = true;
                             break;
                         }
                     }
