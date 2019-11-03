@@ -5,6 +5,7 @@ class Flume extends Core {
 
     private $_apis = [];
     static public $instances = [];
+    static public $bodySizeMax = 1024 * 1024;
 
     public function __construct() {
         //初始化CURL
@@ -101,6 +102,8 @@ class Flume extends Core {
                             break;
                         }
                     }
+                    //文档不存在，不处理
+                    if(isset($mailsNoDoc[$tube])) continue;
                 }
 
                 $stats = $log->statsTube($tube);
@@ -120,7 +123,7 @@ class Flume extends Core {
                         $logsError[] = sprintf("%s\t%s\t%s\n", date('Y-m-d H:i:s'), $tube, $job['body']);
                         continue;
                     }
-                    if(strlen($job['body']) > (1024 * 1024)) {        //消息体超长
+                    if(strlen($job['body']) > self::$bodySizeMax) {        //消息体超长
                         $idsError[] = $job['id'];
                         $logsError[] = sprintf("%s\t%s\t%s\n", date('Y-m-d H:i:s'), $tube, $job['body']);
                     }
@@ -237,7 +240,7 @@ class Flume extends Core {
                 }
                 if($exit) break;
                 if(feof($fp)) { $exit = 1; continue; }
-                $line = trim(fgets($fp));
+                $line = trim(fgets($fp, self::$bodySizeMax));
                 if(!$line) continue;
                 $lArr = explode("\t", $line, 3);
                 if(count($lArr) < 3) { $logsError[] = $line; $countError++; continue; }
@@ -253,7 +256,9 @@ class Flume extends Core {
                     foreach($esdocItems as $esdocItem) {
                         $result = EsClient::instance($esdocItem)->getMap();
                         if($result['code']) {
-                            $logkeys[$logkey] = array_keys($result['data'][$esdoc]["properties"]);
+                            $first = current($result['data']);
+                            $tubeMap = $first["properties"];
+                            $logkeys[$logkey] = array_keys($tubeMap);
                             break;
                         }
                     }
@@ -262,7 +267,7 @@ class Flume extends Core {
                 //不能正确的解析json, 则格式不正确，丢弃
                 if(!$jdata) { $logsError[] = $line; $countError++; continue; }
                 //消息超长
-                if(strlen($lArr[2]) > (1024*1024)) { $logsError[] = $line; $countError++; continue; }
+                if(strlen($lArr[2]) > self::$bodySizeMax) { $logsError[] = $line; $countError++; continue; }
                 $diff = array_diff(array_keys($jdata), $logkeys[$logkey]);
                 if($logkeys[$logkey] && $diff) {
                     $logsCorrect[] = $line;
