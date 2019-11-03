@@ -85,25 +85,25 @@ class Flume extends Core {
                         sprintf("%s_%s", $esdoc, date('Y')),
                     ];
                     //没有取到文档结构，有可能是其他业务的日志，不做处理
-                    $mailsNoDoc[$tube] = 0;
+                    $flagInEs = false;
                     foreach($esdocItems as $esdocItem) {
                         $result = EsClient::instance($esdocItem)->getMap();
                         if($result['code']) {
-                            //log_type应该只有一个，且名字与esdoc保持一致
-                            //因admin_log旧业务有问题，log_type与esdoc不一致，故更改实现方式
-                            //$tubeMap = $result['data'][$esdoc]["properties"];
-                            //$tubeMap = $result['data'][$esdoc]["properties"];
-
                             //取第一个，忽略有多个log_type的问题
                             $first = current($result['data']);
                             $tubeMap = $first["properties"];
                             $tubeKeys = array_keys($tubeMap);
-                            unset($mailsNoDoc[$tube]);
+                            $flagNoDoc = true;
                             break;
                         }
                     }
                     //文档不存在，不处理
-                    if(isset($mailsNoDoc[$tube])) continue;
+                    if($flagInEs) {
+                        unset($mailsNoDoc[$tube]);
+                    } else {
+                        if(!isset($mailsNoDoc[$tube])) $mailsNoDoc[$tube] = 0;
+                        continue;
+                    }
                 }
 
                 $stats = $log->statsTube($tube);
