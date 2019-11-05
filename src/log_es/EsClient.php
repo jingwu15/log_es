@@ -51,8 +51,14 @@ class EsClient extends Core {
         $params = ['index' => $this->_doc];
         try {
             $result = self::conn()->indices()->getMapping($params);
-            $map = $result[$this->_doc]["mappings"];
-            $code = 1;
+            $tmp = current($result);
+            if(isset($tmp['mappings'])) {
+                $map = $tmp['mappings'];
+                $code = 1;
+                return ['code' => $code, 'error' => $reasons, 'data' => $map];
+            } else {
+                return ['code' => $code, 'error' => ["返回的数据中不存在 mappings"], 'data' => $map]
+            }
         } catch(\Exception $e) {
             $reasons = self::parseReason($e->getMessage()); 
         }
