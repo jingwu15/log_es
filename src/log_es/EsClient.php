@@ -57,7 +57,7 @@ class EsClient extends Core {
                 $code = 1;
                 return ['code' => $code, 'error' => $reasons, 'data' => $map];
             } else {
-                return ['code' => $code, 'error' => ["返回的数据中不存在 mappings"], 'data' => $map]
+                return ['code' => $code, 'error' => ["返回的数据中不存在 mappings"], 'data' => $map];
             }
         } catch(\Exception $e) {
             $reasons = self::parseReason($e->getMessage()); 
