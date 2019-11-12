@@ -4,6 +4,8 @@ namespace Jingwu\LogEs;
 class Flume extends Core {
 
     private $_apis = [];
+    static public $memLimit = 0;
+    static public $memLimit80 = 0;
     static public $instances = [];
     static public $bodySizeMax = 1024 * 1024;
 
@@ -11,6 +13,25 @@ class Flume extends Core {
         //初始化CURL
         Curl::instance('flume')->setZip(1);
         $this->_apis = Cfg::instance()->get('flume');
+
+        $memLimitStr = ini_get('memory_limit');
+        switch(substr($memLimitStr, -1)) {
+        case 'K':
+            self::$memLimit = substr($memLimitStr, 0, -1) * 1024; break;
+        case 'K':
+            self::$memLimit = substr($memLimitStr, 0, -1) * 1024; break;
+        case 'm':
+            self::$memLimit = substr($memLimitStr, 0, -1) * 1024 * 1024; break;
+        case 'M':
+            self::$memLimit = substr($memLimitStr, 0, -1) * 1024 * 1024; break;
+        case 'g':
+            self::$memLimit = substr($memLimitStr, 0, -1) * 1024 * 1024 * 1024; break;
+        case 'G':
+            self::$memLimit = substr($memLimitStr, 0, -1) * 1024 * 1024 * 1024; break;
+        default:
+            self::$memLimit = substr($memLimitStr, 0, -1) * 1024 * 1024 * 1024; break;
+        }
+        self::$memLimit80 = self::$memLimit * 0.8;
     }
 
     static public function instance($key = 'default') {
@@ -115,6 +136,8 @@ class Flume extends Core {
                 //print_r("tube-{$tube}-count: {$count}\n");
                 while($count < $stats['current-jobs-ready']) {
                     if($total > $limitWrite) { break; }
+                    // 内存超过限制数量的80％，不再读取新任务
+                    if(memory_get_usage() > self::$memLimit80) { break; }
                     $job    = $log->reserve(1);
                     if($job === false) { $reconn = 1; break; }
                     $jdata = json_decode($job["body"], 1);
