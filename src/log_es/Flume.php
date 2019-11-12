@@ -125,7 +125,8 @@ class Flume extends Core {
                     }
                     if(strlen($job['body']) > self::$bodySizeMax) {        //消息体超长
                         $idsError[] = $job['id'];
-                        $logsError[] = sprintf("%s\t%s\t%s\n", date('Y-m-d H:i:s'), $tube, $job['body']);
+                        //不再记录超长的消息
+                        //$logsError[] = sprintf("%s\t%s\t%s\n", date('Y-m-d H:i:s'), $tube, $job['body']);
                     }
                     $keys = array_keys($jdata);
                     $diff = array_diff($keys, $tubeKeys);
