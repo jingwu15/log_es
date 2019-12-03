@@ -6,6 +6,7 @@ class Cfg extends Core {
     private $_cfg = null;
     static public $instances = [];
     static public $bodySizeMin = 64 * 1024;
+    static public $bodySizeMax = 1024 * 1024;
 
     public function __construct() {
         //初始化
