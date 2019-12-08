@@ -125,6 +125,7 @@ class LogClient extends Core {
             $body = json_encode($row, JSON_UNESCAPED_UNICODE);
             $result = LogQueue::instance('client')->usePut($this->_logfkey, $body);
             if(!$result) file_put_contents($this->_queueFile, "{$now}\t{$this->_logfkey}\t{$body}\n", FILE_APPEND);
+            return $result;
         }
         if($this->_useFile) {
             $body = json_encode($row, JSON_UNESCAPED_UNICODE);
@@ -134,7 +135,6 @@ class LogClient extends Core {
             $body = json_encode($row, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
             print_r("{$now}\t{$this->_logfkey}\t{$body}\n");
         }
-        return $result;
     }
 
     public function emergency($message, array $context = array()) {
