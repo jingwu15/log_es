@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3901ff758f3e7eaf8b9addd60f43c2fc",
+    "content-hash": "a2a9ca2f995e8c5ee502bfd9570ec93b",
     "packages": [
         {
             "name": "elasticsearch/elasticsearch",
@@ -184,16 +184,16 @@
         },
         {
             "name": "jingwu/phpbeanstalk",
-            "version": "0.1.7",
+            "version": "0.1.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/jingwu15/phpbeanstalk.git",
-                "reference": "f1379d97db0c41c8f50003da8e185bac92c2b1ca"
+                "reference": "1d2e98d6ff9c914ed0b7bdd8ae8275ef9c8fa855"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/jingwu15/phpbeanstalk/zipball/f1379d97db0c41c8f50003da8e185bac92c2b1ca",
-                "reference": "f1379d97db0c41c8f50003da8e185bac92c2b1ca",
+                "url": "https://api.github.com/repos/jingwu15/phpbeanstalk/zipball/1d2e98d6ff9c914ed0b7bdd8ae8275ef9c8fa855",
+                "reference": "1d2e98d6ff9c914ed0b7bdd8ae8275ef9c8fa855",
                 "shasum": "",
                 "mirrors": [
                     {
@@ -206,7 +206,7 @@
                 "php": ">=5.2.1"
             },
             "require-dev": {
-                "phpunit/phpunit": "^7"
+                "phpunit/phpunit": "^5"
             },
             "type": "library",
             "autoload": {
@@ -231,7 +231,7 @@
                 "beanstalk",
                 "queue"
             ],
-            "time": "2020-02-01T10:34:21+00:00"
+            "time": "2020-02-03T11:23:50+00:00"
         },
         {
             "name": "monolog/monolog",
