@@ -19,7 +19,6 @@ class Cfg extends Core {
                 'socket_timeout' => 3600
             ],
             'flume' => [],
-            'es' => [],
             'logdir' => '/tmp',
             'logpre' => 'log_',
             'limit' => [
@@ -30,7 +29,6 @@ class Cfg extends Core {
                 'mails' => [],
                 'interval' => 300,
             ],
-            'mq_esdoc' => [],
         ];
     }
 
@@ -57,8 +55,6 @@ class Cfg extends Core {
     }
 
     public function setEs($apis) {
-        if(!$this->_formatStrArr($apis)) return false;
-        $this->_cfg['es'] = $apis;
     }
 
     public function setMails($mails) {
@@ -82,7 +78,6 @@ class Cfg extends Core {
     }
 
     public function setMqEsdoc($mqEsdoc) {
-        $this->_cfg['mq_esdoc'] = $mqEsdoc ? $mqEsdoc : $this->_cfg['mq_esdoc'];
     }
 
     public function setLimitWrite($limitWrite = 50000) {
@@ -116,7 +111,6 @@ class Cfg extends Core {
     public function check() {
         if(!$this->_cfg['beanstalk']) return ['code' => 0, "error" => "beanstalk noset"];
         if(!$this->_cfg['flume'])     return ['code' => 0, "error" => "flume noset"    ];
-        if(!$this->_cfg['es'])        return ['code' => 0, "error" => "es noset"       ];
         if(!$this->_cfg['mail'])     return ['code' => 0, "error" => "mail noset"     ];
 
         $cfgBs = $this->_cfg['beanstalk'];

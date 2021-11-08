@@ -70,9 +70,6 @@ class LogClient extends Core {
     }
 
     static public function setLogger($logkey, $logger, $level = Logger::DEBUG) {
-        $esHandler = new EsHandler($logkey, $level);
-        $esHandler->setFormatter(new LineFormatter("[%datetime%] %channel%.%level_name%: %message% %context% %extra% \n", '', true));
-        $logger->pushHandler($esHandler);
         self::$loggers[$logkey] = $logger;
     }
 
@@ -90,9 +87,6 @@ class LogClient extends Core {
     }
 
     static public function setLoggerEs($logger, $logkey, $level = Logger::DEBUG) {
-        $esHandler = new EsHandler($logkey, $level);
-        $esHandler->setFormatter(new LineFormatter("[%datetime%] %channel%.%level_name%: %message% %context% %extra% \n", '', true));
-        $logger->pushHandler($esHandler);
     }
 
     public function setLevel($level = Logger::DEBUG) {
